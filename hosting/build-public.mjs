@@ -16,16 +16,28 @@ await fs.writeFile(join(output,'.openai/hosting.json.tmp'),identity);await fs.re
 const write=async(path,text)=>{const p=join(dist,path);await fs.mkdir(resolve(p,'..'),{recursive:true});await fs.writeFile(p,text);};
 const copy=async(path,to=path)=>write(to,await fs.readFile(join(root,path)));
 for(const file of ['app.mjs','styles.css','config.js','lib/analysis.mjs','lib/care.mjs','lib/experience-ui.mjs','lib/import.mjs','lib/public-posts.mjs','lib/intent.mjs','lib/intent-ui.mjs','lib/guide-ui.mjs','lib/guide-match.mjs'])await copy(file);
+await copy('hosting/reconcile-posts.mjs','lib/reconcile-posts.mjs');
 let html=await fs.readFile(join(root,'Pettinee_Feed_AI_Demo.html'),'utf8');html=html.replace('src="/app.mjs"','src="/entry.mjs"').replace('Demo</span>','Demo ออนไลน์</span>');
 let app=await fs.readFile(join(dist,'app.mjs'),'utf8');app=app.replace('<button class="text-button" data-action="load-public">เปิดชุด 200 โพสต์</button>','<button class="primary" data-care-action="new-case">เขียนเรื่องของฉัน</button>');
-app=app.replace("import { demoPosts } from './data/demo-posts.mjs';","import { demoPosts, publicPosts } from './data/demo-posts.mjs';");
+app=app.replace("import { demoPosts } from './data/demo-posts.mjs';","import { demoPosts, publicPosts } from './data/demo-posts.mjs';\nimport {reconcilePublicDataset,inPublicFeed} from './lib/reconcile-posts.mjs';");
 const mergePoint="for(const p of state.posts.filter(p=>!p.fileName&&demoPosts.some";
 if(!app.includes(mergePoint))throw Error('Public data merge location changed');
-app=app.replace(mergePoint,`const publishedIds=new Set(publicPosts.map(p=>p.id));
+app=app.replace(mergePoint,`function reconcilePublicState(){const result=reconcilePublicDataset(state.posts,publicPosts,state.saved);state.posts=result.posts;state.saved=result.saved;}
 for(const p of publicPosts){const old=state.posts.find(x=>x.id===p.id);if(old&&old.text!==p.text)delete state.analyses[p.id];}
-state.posts=[...copy(publicPosts),...state.posts.filter(p=>!publishedIds.has(p.id))];
+reconcilePublicState();
 for(const p of state.posts.filter(p=>!p.publicDataset&&!p.fileName&&demoPosts.some`);
-app=app.replace('<p>ปรึกษาเรื่องแมว by ปอน</p>','<p>ข้อความโพสต์ 179 รายการ · เคสจำลอง 6 รายการ</p>');await write('app.mjs',app);
+app=app.replace('function persist(){ try{','function persist(){ reconcilePublicState();try{');
+app=app.replace("return state.posts.filter(p=>(state.filter==='ทั้งหมด'||","return state.posts.filter(p=>inPublicFeed(p,state.filter)&&(state.filter==='ทั้งหมด'||state.filter==='นำเข้าเดิม'||");
+app=app.replace('new Set(state.posts.map(p=>p.category','new Set(state.posts.filter(p=>!p.publicLegacy).map(p=>p.category');
+app=app.replaceAll('state.saved.has(p.id)','state.saved.has(p.publicCanonicalId||p.id)');
+app=app.replace("case 'save':state.saved.has(state.active)?state.saved.delete(state.active):state.saved.add(state.active);persist();renderList();renderDetail();break;","case 'save':{const post=state.posts.find(p=>p.id===state.active),id=post?.publicCanonicalId||state.active;state.saved.has(id)?state.saved.delete(id):state.saved.add(id);persist();renderList();renderDetail();break;}");
+app=app.replace('<p>ปรึกษาเรื่องแมว by ปอน</p>','<p id="dataset-counts"></p>');
+app=app.replace('  const posts=matchingPosts(),pages=',`  const legacyCount=state.posts.filter(p=>p.publicLegacy).length;
+  if(legacyCount){const option=document.createElement('option');option.value='นำเข้าเดิม';option.textContent='ข้อมูลนำเข้าเดิม ('+legacyCount+')';if(state.filter==='นำเข้าเดิม')option.setAttribute('selected','');document.getElementById('category-select').appendChild(option);}
+  const live=state.posts.filter(p=>!p.publicLegacy),extra=live.filter(p=>!p.publicDataset&&p.provenance!=='simulated').length;
+  document.getElementById('dataset-counts').textContent=state.filter==='นำเข้าเดิม'?'ข้อมูลนำเข้าเดิม '+legacyCount+' รายการ เก็บไว้ในเครื่องนี้':'ข้อความโพสต์ '+live.filter(p=>p.publicDataset).length+' รายการ · เคสจำลอง '+live.filter(p=>p.provenance==='simulated').length+' รายการ'+(extra?' · เพิ่มในเครื่อง '+extra+' รายการ':'');
+  const posts=matchingPosts(),pages=`);
+await write('app.mjs',app);
 let experience=await fs.readFile(join(dist,'lib/experience-ui.mjs'),'utf8');
 const begin=experience.indexOf('  function showHome() {'),end=experience.indexOf('  function contextPanel()',begin);
 if(begin<0||end<0)throw Error('Home replacement not found');

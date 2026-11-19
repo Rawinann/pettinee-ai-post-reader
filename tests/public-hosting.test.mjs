@@ -4,6 +4,8 @@ import {readFile,readdir,stat} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import {parseHTML} from 'linkedom';
 import {setTimeout as delay} from 'node:timers/promises';
+import {readWorkbook,suggestMapping,previewImport} from '../lib/import.mjs';
+import {PUBLIC_FILE} from '../lib/public-posts.mjs';
 const dist=new URL('../sites/pettinee-public/dist/',import.meta.url);
 const available=await stat(dist).then(()=>true,()=>false);
 test('public build publishes text excerpts without source identifiers or research files', {skip:!available},async()=>{
@@ -34,7 +36,10 @@ test('public browser adapter performs actual intent inference and lexical matchi
 test('public DOM adds text posts to existing storage, paginates, shows guides and copies handoff without losing personal notes',{skip:!available},async t=>{
  const {window,document}=parseHTML(await readFile(new URL('index.html',dist),'utf8'));
  const descriptors=new Map(),copied=[],saved=new Map();
- saved.set('pettinee-local-v1',JSON.stringify({posts:[{id:'own-case',text:'บันทึกส่วนตัวที่ต้องเก็บไว้',title:'เรื่องของฉัน',provenance:'imported',comments:[],coverage:'unknown'}],saved:['own-case']}));
+ const workbook=await readWorkbook(await readFile(new URL('../data/'+PUBLIC_FILE,import.meta.url))),sheet=workbook.sheets.find(s=>s.name==='โพสต์ 200 รายการ');
+ const legacy=previewImport(sheet.rows,suggestMapping(sheet.headers),[],{fileName:PUBLIC_FILE,sheetName:sheet.name}).posts;
+ saved.set('pettinee-local-v1',JSON.stringify({posts:[...legacy,{id:'own-case',text:'บันทึกส่วนตัวที่ต้องเก็บไว้',title:'เรื่องของฉัน',provenance:'imported',comments:[],coverage:'unknown'}],saved:['own-case',legacy[0].id]}));
+ saved.set('pettinee-care-v1',JSON.stringify({[legacy[0].id]:{petName:'ชื่อแมวในสมุดเดิม',journal:[],plan:[]}}));
  const put=(key,value)=>{descriptors.set(key,Object.getOwnPropertyDescriptor(globalThis,key));Object.defineProperty(globalThis,key,{configurable:true,writable:true,value});};
  put('document',document);put('window',window);put('location',new URL('https://public.test/'));put('navigator',{clipboard:{writeText:async text=>copied.push(text)}});put('localStorage',{getItem:key=>saved.get(key)||null,setItem:(key,value)=>saved.set(key,value)});put('matchMedia',()=>({matches:false}));
  window.HTMLElement.prototype.scrollIntoView=function(){};window.HTMLElement.prototype.focus=function(){};window.HTMLElement.prototype.showModal=function(){this.open=true;};window.HTMLElement.prototype.close=function(){this.open=false;};
@@ -46,6 +51,7 @@ test('public DOM adds text posts to existing storage, paginates, shows guides an
  const click=selector=>{const element=document.querySelector(selector);assert.ok(element,selector);element.dispatchEvent(new window.Event('click',{bubbles:true}));};
  await import(new URL('app.mjs?public-flow',dist));
  assert.equal(document.getElementById('post-reader').hidden,true);assert.equal(document.querySelectorAll('[data-post]').length,24);assert.equal(document.getElementById('feed-count').textContent,'186 โพสต์');
+ assert.match(document.getElementById('dataset-counts').textContent,/เพิ่มในเครื่อง 1 รายการ/);assert.ok(document.querySelector('[data-post="published-001"] .saved-mark'));
  click('[data-post="published-001"]');assert.equal(document.getElementById('post-browser').hidden,true);
  for(let i=0;i<100&&!document.querySelector('#guide-results .guide-item');i++)await delay(10);
  assert.ok(document.querySelector('#guide-results .guide-item a'));
@@ -55,6 +61,11 @@ test('public DOM adds text posts to existing storage, paginates, shows guides an
  const destination=new URL(document.getElementById('open-meong').getAttribute('href'));assert.equal(destination.search,'');assert.equal(destination.hash,'');
  click('#close-handoff');click('[data-action="back-posts"]');assert.equal(document.getElementById('post-reader').hidden,true);
  const search=document.getElementById('search');search.value='บันทึกส่วนตัวที่ต้องเก็บไว้';search.dispatchEvent(new window.Event('input',{bubbles:true}));assert.equal(document.querySelectorAll('[data-post]').length,1);assert.ok(document.querySelector('[data-post="own-case"] .saved-mark'));
+ search.value='';search.dispatchEvent(new window.Event('input',{bubbles:true}));
+ const category=document.getElementById('category-select');for(const option of category.querySelectorAll('option'))option.removeAttribute('selected');category.querySelector('option[value="นำเข้าเดิม"]').setAttribute('selected','');category.dispatchEvent(new window.Event('change',{bubbles:true}));
+ assert.equal(document.getElementById('feed-count').textContent,'200 โพสต์');assert.match(document.getElementById('dataset-counts').textContent,/ข้อมูลนำเข้าเดิม 200/);
+ click('[data-post="'+legacy[0].id+'"]');for(let i=0;i<100&&!document.querySelector('#guide-results .guide-item');i++)await delay(10);
+ click('[data-care-action="open-care"]');assert.equal(document.getElementById('care-petName').value,'ชื่อแมวในสมุดเดิม');
 });
 
 test('public UI copy retains entry point and does not offer bundled Facebook research or public label editing',{skip:!available},async()=>{
