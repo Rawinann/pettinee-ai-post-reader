@@ -6,12 +6,15 @@ import {parseHTML} from 'linkedom';
 import {setTimeout as delay} from 'node:timers/promises';
 const dist=new URL('../sites/pettinee-public/dist/',import.meta.url);
 const available=await stat(dist).then(()=>true,()=>false);
-test('public build excludes research data and uses fictional examples', {skip:!available},async()=>{
+test('public build publishes text excerpts without source identifiers or research files', {skip:!available},async()=>{
  const files=await readdir(dist,{recursive:true});
  assert.ok(files.includes('index.html'));assert.ok(files.includes('vendor/ort-wasm-simd-threaded.jsep.wasm')||files.includes('vendor\\ort-wasm-simd-threaded.jsep.wasm'));
  for(const path of files)assert.doesNotMatch(path,/\.xlsx$|corpus\.json|annotations\.json|documents\.jsonl|\.env|server\.mjs/);
  const source=await readFile(new URL('data/demo-posts.mjs',dist),'utf8');assert.doesNotMatch(source,/facebook\.com|ถอดความจากชุดวิจัย/);
- const {demoPosts}=await import(new URL('data/demo-posts.mjs',dist));assert.equal(demoPosts.length,6);assert.ok(demoPosts.every(p=>p.provenance==='simulated'));
+ const {demoPosts,publicPosts}=await import(new URL('data/demo-posts.mjs',dist));assert.equal(demoPosts.length,185);assert.equal(publicPosts.length,179);assert.equal(demoPosts.filter(p=>p.provenance==='simulated').length,6);
+ assert.equal(new Set(publicPosts.map(p=>p.id)).size,179);
+ assert.ok(publicPosts.every(p=>!p.url&&!p.postId&&!p.comments.length&&!p.commentSummary&&p.postTextKind==='excerpt'));
+ assert.doesNotMatch(source,/พี่ส้ม|กังฟู|ไอ้อ๊อด|เจ้าตุ๋ย|น้องจิ๊ง|รพ เกษตร/);
  const model=JSON.parse(await readFile(new URL('ml-assets/intent-model.json',dist)));assert.equal(model.evaluation.errors,undefined);assert.equal(model.trainTextHashes,undefined);
 });
 test('public browser adapter performs actual intent inference and lexical matching without sending user data', {skip:!available},async()=>{
@@ -28,9 +31,10 @@ test('public browser adapter performs actual intent inference and lexical matchi
  const review=await scope.fetch('/api/intent/annotations');assert.equal(review.status,403);
  assert.ok(calls.every(path=>path.startsWith('/ml-assets/')&&!path.includes('?')));assert.equal(calls.length,2);
 });
-test('public DOM flow selects fictional post, shows guide, edits and copies natural handoff',{skip:!available},async t=>{
+test('public DOM adds text posts to existing storage, paginates, shows guides and copies handoff without losing personal notes',{skip:!available},async t=>{
  const {window,document}=parseHTML(await readFile(new URL('index.html',dist),'utf8'));
  const descriptors=new Map(),copied=[],saved=new Map();
+ saved.set('pettinee-local-v1',JSON.stringify({posts:[{id:'own-case',text:'บันทึกส่วนตัวที่ต้องเก็บไว้',title:'เรื่องของฉัน',provenance:'imported',comments:[],coverage:'unknown'}],saved:['own-case']}));
  const put=(key,value)=>{descriptors.set(key,Object.getOwnPropertyDescriptor(globalThis,key));Object.defineProperty(globalThis,key,{configurable:true,writable:true,value});};
  put('document',document);put('window',window);put('location',new URL('https://public.test/'));put('navigator',{clipboard:{writeText:async text=>copied.push(text)}});put('localStorage',{getItem:key=>saved.get(key)||null,setItem:(key,value)=>saved.set(key,value)});put('matchMedia',()=>({matches:false}));
  window.HTMLElement.prototype.scrollIntoView=function(){};window.HTMLElement.prototype.focus=function(){};window.HTMLElement.prototype.showModal=function(){this.open=true;};window.HTMLElement.prototype.close=function(){this.open=false;};
@@ -41,15 +45,16 @@ test('public DOM flow selects fictional post, shows guide, edits and copies natu
  t.after(()=>{for(const [key,value]of descriptors){if(value)Object.defineProperty(globalThis,key,value);else delete globalThis[key];}});
  const click=selector=>{const element=document.querySelector(selector);assert.ok(element,selector);element.dispatchEvent(new window.Event('click',{bubbles:true}));};
  await import(new URL('app.mjs?public-flow',dist));
- assert.equal(document.getElementById('post-reader').hidden,true);assert.equal(document.querySelectorAll('[data-post]').length,6);
- click('[data-post="41"]');assert.equal(document.getElementById('post-browser').hidden,true);
+ assert.equal(document.getElementById('post-reader').hidden,true);assert.equal(document.querySelectorAll('[data-post]').length,24);assert.equal(document.getElementById('feed-count').textContent,'186 โพสต์');
+ click('[data-post="published-001"]');assert.equal(document.getElementById('post-browser').hidden,true);
  for(let i=0;i<100&&!document.querySelector('#guide-results .guide-item');i++)await delay(10);
  assert.ok(document.querySelector('#guide-results .guide-item a'));
- click('[data-action="handoff"]');const textarea=document.getElementById('handoff-text');assert.ok(textarea.value.includes('การดูแลแผล'));
+ click('[data-action="handoff"]');const textarea=document.getElementById('handoff-text');assert.ok(textarea.value.includes('อาเจียน'));
  assert.doesNotMatch(textarea.value,/Meta|กรณีนี้อ้างอิง/);click('#edit-handoff');assert.equal(textarea.hidden,false);
  textarea.value+='\nอยากถามเรื่องนี้เพิ่มเติม';textarea.dispatchEvent(new window.Event('input',{bubbles:true}));click('#copy-summary');await delay(0);assert.equal(copied[0],textarea.value);
  const destination=new URL(document.getElementById('open-meong').getAttribute('href'));assert.equal(destination.search,'');assert.equal(destination.hash,'');
  click('#close-handoff');click('[data-action="back-posts"]');assert.equal(document.getElementById('post-reader').hidden,true);
+ const search=document.getElementById('search');search.value='บันทึกส่วนตัวที่ต้องเก็บไว้';search.dispatchEvent(new window.Event('input',{bubbles:true}));assert.equal(document.querySelectorAll('[data-post]').length,1);assert.ok(document.querySelector('[data-post="own-case"] .saved-mark'));
 });
 
 test('public UI copy retains entry point and does not offer bundled Facebook research or public label editing',{skip:!available},async()=>{

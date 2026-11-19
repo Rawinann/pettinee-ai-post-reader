@@ -2,6 +2,9 @@ import fs from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import {join,resolve} from 'node:path';
 import {demoPosts} from '../data/demo-posts.mjs';
+import {readWorkbook} from '../lib/import.mjs';
+import {publicPostRows,PUBLIC_FILE} from '../lib/public-posts.mjs';
+import {createPublicPosts} from './post-texts.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url)),output=resolve(root,'sites/pettinee-public'),dist=join(output,'dist');
 await fs.mkdir(dist,{recursive:true});
 await fs.rm(join(dist,'vendor/transformers.web.min.js'),{force:true});
@@ -14,7 +17,15 @@ const write=async(path,text)=>{const p=join(dist,path);await fs.mkdir(resolve(p,
 const copy=async(path,to=path)=>write(to,await fs.readFile(join(root,path)));
 for(const file of ['app.mjs','styles.css','config.js','lib/analysis.mjs','lib/care.mjs','lib/experience-ui.mjs','lib/import.mjs','lib/public-posts.mjs','lib/intent.mjs','lib/intent-ui.mjs','lib/guide-ui.mjs','lib/guide-match.mjs'])await copy(file);
 let html=await fs.readFile(join(root,'Pettinee_Feed_AI_Demo.html'),'utf8');html=html.replace('src="/app.mjs"','src="/entry.mjs"').replace('Demo</span>','Demo ออนไลน์</span>');
-let app=await fs.readFile(join(dist,'app.mjs'),'utf8');app=app.replace('<button class="text-button" data-action="load-public">เปิดชุด 200 โพสต์</button>','<button class="primary" data-care-action="new-case">เขียนเรื่องของฉัน</button>');await write('app.mjs',app);
+let app=await fs.readFile(join(dist,'app.mjs'),'utf8');app=app.replace('<button class="text-button" data-action="load-public">เปิดชุด 200 โพสต์</button>','<button class="primary" data-care-action="new-case">เขียนเรื่องของฉัน</button>');
+app=app.replace("import { demoPosts } from './data/demo-posts.mjs';","import { demoPosts, publicPosts } from './data/demo-posts.mjs';");
+const mergePoint="for(const p of state.posts.filter(p=>!p.fileName&&demoPosts.some";
+if(!app.includes(mergePoint))throw Error('Public data merge location changed');
+app=app.replace(mergePoint,`const publishedIds=new Set(publicPosts.map(p=>p.id));
+for(const p of publicPosts){const old=state.posts.find(x=>x.id===p.id);if(old&&old.text!==p.text)delete state.analyses[p.id];}
+state.posts=[...copy(publicPosts),...state.posts.filter(p=>!publishedIds.has(p.id))];
+for(const p of state.posts.filter(p=>!p.publicDataset&&!p.fileName&&demoPosts.some`);
+app=app.replace('<p>ปรึกษาเรื่องแมว by ปอน</p>','<p>ข้อความโพสต์ 179 รายการ · เคสจำลอง 6 รายการ</p>');await write('app.mjs',app);
 let experience=await fs.readFile(join(dist,'lib/experience-ui.mjs'),'utf8');
 const begin=experience.indexOf('  function showHome() {'),end=experience.indexOf('  function contextPanel()',begin);
 if(begin<0||end<0)throw Error('Home replacement not found');
@@ -30,7 +41,10 @@ guide=guide.replace(' return {loadPost:post=>load(post.text),showPage};',` windo
 const simulated=demoPosts.filter(p=>p.provenance==='simulated');
 const make=(id,title,text,category)=>({id,postId:'',title,text,category,url:'',comments:[],commentSummary:'',coverage:'unknown',provenance:'simulated',sourceLabel:'เคสจำลองสำหรับทดลองระบบ',missing:[],readingMode:'post-only'});
 const examples=[make('41','สงสัยเรื่องแผลหลังทำหมัน','อยากอ่านเรื่องการดูแลแผลแมวหลังทำหมัน และวิธีจดข้อมูลไว้ถามคลินิก','หลังรักษา'),make('100','เลือกน้ำพุแมวให้เหมาะกับบ้าน','อยากรู้ว่าก่อนเลือกน้ำพุแมว ควรถามเรื่องการถอดล้างและวัสดุอะไรบ้าง','อุปกรณ์'),...simulated];
-await write('data/demo-posts.mjs','// Fictional examples only; no research workbook or Facebook source links.\nexport const demoPosts='+JSON.stringify(examples,null,2)+';\n');
+const rows=publicPostRows(await readWorkbook(await fs.readFile(join(root,'data',PUBLIC_FILE))));
+const publicPosts=createPublicPosts(rows);
+if(rows.length!==200||publicPosts.length!==179)throw Error('Research snapshot changed: review text-only publication before building');
+await write('data/demo-posts.mjs','// Approved text-only publication; source IDs, URLs and research metadata omitted.\nexport const publicPosts='+JSON.stringify(publicPosts,null,2)+';\nexport const demoPosts=[...publicPosts,...'+JSON.stringify(examples,null,2)+'];\n');
 const model=JSON.parse(await fs.readFile(join(root,'models/intent-model.json'),'utf8'));
 delete model.trainTextHashes;delete model.evaluation.errors;await write('ml-assets/intent-model.json',JSON.stringify(model));
 await copy('data/guides/catalog.json','ml-assets/guide-catalog.json');await copy('data/guides/index.json','ml-assets/guide-index.json');await copy('models/guide-encoder/manifest.json','ml-assets/encoder-manifest.json');
@@ -42,4 +56,4 @@ await write('public.css','.semantic-opt-in{margin-top:14px}.public-demo .data-to
 await write('index.html',html.replace('</head>','<link rel="stylesheet" href="/public.css"></head>'));
 await fs.writeFile(join(output,'package.json'),JSON.stringify({name:'pettinee-public',version:'1.0.0',private:true,type:'module'},null,2));
 await fs.writeFile(join(output,'.gitignore'),'node_modules/\n.sites-runtime/\n');
-console.log('Built public demo: no Facebook workbook, corpus, annotations, environment files or server mutation APIs.');
+console.log('Built public demo: 179 reviewed text excerpts + 6 fictional examples; no workbook, source IDs/URLs, corpus, annotations or server mutation APIs.');
