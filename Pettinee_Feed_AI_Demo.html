@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#245744">
+  <meta name="description" content="Pettinee พื้นที่อ่านโพสต์และคอมเมนต์เรื่องแมว พร้อมทางเลือกสำหรับคำถามถัดไป">
+  <title>Pettinee · อ่านให้เข้าใจ แล้วค่อยไปต่อ</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='12' fill='%23245744'/%3E%3Ctext x='11' y='29' fill='white' font-size='29' font-family='sans-serif'%3Ep%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/styles.css">
+  <script type="module" src="/app.mjs"></script>
+</head>
+<body>
+  <a class="skip" href="#workspace">ข้ามไปเนื้อหา</a>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Pettinee หน้าหลัก">pettinee<span>.</span></a>
+    <nav aria-label="เมนูหลัก" id="main-nav">
+      <button data-view="feed" aria-current="page">โพสต์</button><button data-view="guides">คู่มือ</button>
+      <button data-view="care">เรื่องของฉัน</button>
+      <details class="data-tools"><summary>เพิ่มเติม</summary><div><button data-view="home">เริ่มเรื่องใหม่ / ตัวอย่าง</button><button data-view="intent">AI จำแนกโพสต์</button><button data-view="import">นำเข้า Excel</button><button data-view="overview">ภาพรวมข้อมูล</button></div></details>
+    </nav>
+    <span class="mode">Demo</span>
+  </header>
+  <main>
+    <div id="workspace" tabindex="-1"></div>
+    <footer><p>ข้อมูลเก็บในเบราว์เซอร์เครื่องนี้ · สรุปคำตอบเป็น Demo</p></footer>
+  </main>
+  <dialog id="handoff" aria-labelledby="handoff-title">
+    <div class="dialog-head"><div><p class="eyebrow">ก่อนเริ่มบทสนทนาถัดไป</p><h2 id="handoff-title">ตรวจสรุปที่จะใช้ถามต่อ</h2></div><button class="icon-button" id="close-handoff" aria-label="ปิดหน้าตรวจสรุป">×</button></div>
+    <p class="muted">ลองอ่านข้อความนี้ก่อนคัดลอก แก้ให้เป็นคำพูดของคุณและตัดรายละเอียดที่ไม่อยากแชร์ออกได้</p>
+    <div id="handoff-preview" class="message-preview"></div>
+    <button class="text-button" id="edit-handoff" aria-expanded="false">แก้ไขข้อความ</button>
+    <label class="skip" for="handoff-text">ข้อความที่ต้องการถาม</label><textarea id="handoff-text" rows="10" spellcheck="false" hidden></textarea>
+    <p class="handoff-channel-note" id="handoff-channel-note"></p>
+    <div class="handoff-steps"><button class="primary" id="copy-summary">คัดลอกข้อความ</button><a class="secondary" id="open-meong" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">เปิด MeongSilJang ภาษาไทย</a></div>
+    <p id="copy-status" role="status" aria-live="polite"></p><p class="notice">ข้อความยังไม่ถูกส่งไปไหน คุณคัดลอกแล้วเลือกนำไปถามต่อเอง</p>
+  </dialog>
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>

@@ -1,0 +1,26 @@
+{
+  "name": "pettinee-feed-demo",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Pettinee local Thai Facebook research reader and Excel import demo",
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "train:intent": "python ml/train.py",
+    "prepare:search": "node ml/prepare_search_corpus.mjs",
+    "guides:sync": "node guides/sync.mjs",
+    "guides:download": "node guides/download_encoder.mjs",
+    "guides:index": "node guides/build_index.mjs",
+    "check": "node --check server.mjs && node --check app.mjs && node --check lib/care.mjs && node --check lib/experience-ui.mjs && node --check lib/intent.mjs && node --check lib/intent-ui.mjs && node --check server/intent.mjs && node --check lib/guide-match.mjs && node --check lib/guide-ui.mjs && node --check server/guides.mjs && node --check guides/encoder.mjs && node --check guides/sync.mjs && node --check guides/download_encoder.mjs && node --check guides/build_index.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "linkedom": "0.18.12"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "3.8.1"
+  }
+}

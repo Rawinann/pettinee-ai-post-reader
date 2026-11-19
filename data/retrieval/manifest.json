@@ -1,0 +1,8 @@
+{
+  "status": "not_indexed",
+  "documents": 179,
+  "excludedNoText": 21,
+  "embeddingModel": null,
+  "dimensions": null,
+  "warning": "Prepared corpus only. Semantic search has not been implemented. No document text has been sent to an embedding service."
+}

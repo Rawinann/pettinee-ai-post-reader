@@ -1,0 +1,1605 @@
+{
+  "version": 1,
+  "labels": [
+    {
+      "id": "9085466821544625",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "27497866043211423",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "27373338885664140",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "26122839104047464",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "8378022748955706",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "29036525479345464",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "9208569435901029",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "26087744604223581",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "24909026185428768",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "27411799665151395",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "26600671186264251",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "27915738524757504",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "4987630517994963",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "26337912852540087",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "9884527671638532",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "8099255806832403",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "24773890898942298",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "27111337841864247",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "24826663080331746",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "25413084015022980",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "26227255480272492",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "25072244119106973",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "24664038009927588",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "23915375201460543",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "26186189997712374",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "9165416923549614",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "7836138573144129",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "8015705925187392",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "9244582998966339",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "24325715693759823",
+      "label": "experience",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "8941648229259819",
+      "label": "experience",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "9876557549102211",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "10009171952507436",
+      "label": null,
+      "status": "excluded",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ไม่มีข้อความ ไม่นำเข้า train/test"
+    },
+    {
+      "id": "25496449746686406",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "25294367173561332",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "28213194371678583",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "26644630515201651",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "9140372272720746",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "28797761673221847",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "24741344972196891",
+      "label": null,
+      "status": "excluded",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ไม่มีข้อความ ไม่นำเข้า train/test"
+    },
+    {
+      "id": "28699307349733947",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "8932608366830472",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "7889326527825333",
+      "label": null,
+      "status": "excluded",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ไม่มีข้อความ ไม่นำเข้า train/test"
+    },
+    {
+      "id": "8090838164340834",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "24666354619695927",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "29184057451258932",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "29000380442959968",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "24497424476588943",
+      "label": null,
+      "status": "excluded",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ไม่มีข้อความ ไม่นำเข้า train/test"
+    },
+    {
+      "id": "9865554346869198",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "25842230192108358",
+      "label": null,
+      "status": "excluded",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ไม่มีข้อความ ไม่นำเข้า train/test"
+    },
+    {
+      "id": "9449443145146989",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "26113837701614271",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "9362135123877792",
+      "label": "experience",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "7868873109870675",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "10084493584975272",
+      "label": "experience",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "7037736619650999",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "9404115633013074",
+      "label": "cost",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "27448960044768690",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "6072081499549854",
+      "label": "cost",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "24865004646497589",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "24918307291167324",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "25751701641161214",
+      "label": "cost",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "25499627329701981",
+      "label": "cost",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "25707302955601083",
+      "label": "cost",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "28773986535599361",
+      "label": null,
+      "status": "excluded",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ไม่มีข้อความ ไม่นำเข้า train/test"
+    },
+    {
+      "id": "9168098599948113",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "25843776605287050",
+      "label": "cost",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "9007802562644385",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "9036821006409207",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "9124541540970486",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "9811288205629146",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "9336986396392665",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "24591624423835614",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "26190271283970912",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "9078408255583815",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "27337989499199079",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "27376228625375166",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "9014279195330055",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "26735875672743801",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "9267326066692032",
+      "label": null,
+      "status": "excluded",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ไม่มีข้อความ ไม่นำเข้า train/test"
+    },
+    {
+      "id": "25629704086694304",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "6791502120941118",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "7845160925575227",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "27927352653596091",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "26137973875867320",
+      "label": "experience",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "9156169151141058",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "29186813597649984",
+      "label": null,
+      "status": "excluded",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ไม่มีข้อความ ไม่นำเข้า train/test"
+    },
+    {
+      "id": "7962140227210629",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "27007568992241133",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "24570420639289326",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "26737784849219550",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "27616959751302051",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "27591285777202782",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "26018298967834812",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "24863023453362375",
+      "label": "cost",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "26284815157849857",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "27844144055250285",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "9089861661105141",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "8732673230157321",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "26534377819560255",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "24756675267330528",
+      "label": null,
+      "status": "excluded",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ไม่มีข้อความ ไม่นำเข้า train/test"
+    },
+    {
+      "id": "28011249065206449",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "26516620844669286",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "28777869105211104",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "26685979261066776",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "29212184848446192",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "27376769555321073",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "27911155211882502",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "8943483085743000",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "25065911206406931",
+      "label": "experience",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "28998074419857237",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "28844484908549523",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "25706375672360478",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "27480111731653521",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "29370467785951230",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "7027344664023528",
+      "label": null,
+      "status": "excluded",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ไม่มีข้อความ ไม่นำเข้า train/test"
+    },
+    {
+      "id": "25601691086162271",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "27819019221096102",
+      "label": "experience",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "9191703510920955",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "24658534033811319",
+      "label": null,
+      "status": "excluded",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ไม่มีข้อความ ไม่นำเข้า train/test"
+    },
+    {
+      "id": "27601896289475064",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "27671970409134318",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "24481602801504444",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "26811343595197008",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "9948901498534482",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "28931284436536236",
+      "label": null,
+      "status": "excluded",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ไม่มีข้อความ ไม่นำเข้า train/test"
+    },
+    {
+      "id": "26906851432312890",
+      "label": "compare",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "29106862062311805",
+      "label": "compare",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "27808951405436217",
+      "label": "compare",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "24223250320673028",
+      "label": "compare",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "29194981120166565",
+      "label": "compare",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "23968151479516248",
+      "label": "compare",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "24684061701258552",
+      "label": "compare",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "24369468016051257",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "27436036486061046",
+      "label": null,
+      "status": "excluded",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ไม่มีข้อความ ไม่นำเข้า train/test"
+    },
+    {
+      "id": "27758845140446844",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "9303470789744226",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "28326674520330567",
+      "label": "experience",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "7750302725061048",
+      "label": "compare",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "26086456727685702",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "25670903162574396",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "28935710479426965",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "9182524418505531",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "9486539048104065",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "26315569231441116",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "27823324377332253",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "25026720880325964",
+      "label": null,
+      "status": "excluded",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ไม่มีข้อความ ไม่นำเข้า train/test"
+    },
+    {
+      "id": "24815398554791532",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "1766043356820378",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "26852040611127306",
+      "label": "experience",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "29033947339603278",
+      "label": "experience",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "25562208983443815",
+      "label": null,
+      "status": "excluded",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ไม่มีข้อความ ไม่นำเข้า train/test"
+    },
+    {
+      "id": "7086088958149098",
+      "label": "compare",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "25496468733351174",
+      "label": "compare",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "28884733364524677",
+      "label": "compare",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "27744147385249953",
+      "label": "compare",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "25534779139520133",
+      "label": "compare",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "26234827919515248",
+      "label": "compare",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "28572527282411955",
+      "label": "compare",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "24429460840051974",
+      "label": "compare",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "7663753643715957",
+      "label": "compare",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "24164008546597206",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "27649254758072550",
+      "label": null,
+      "status": "excluded",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ไม่มีข้อความ ไม่นำเข้า train/test"
+    },
+    {
+      "id": "24377088528622539",
+      "label": "compare",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "26559777513686952",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "7831610263596960",
+      "label": "experience",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "24521688150829242",
+      "label": "compare",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "25983867247944651",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "9236414403116532",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "27864982636499760",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "25721496560848389",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "27673019312362761",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "9669496333141668",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "26551617417836295",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "25117584451239606",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "27520912200906807",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "29086107901053888",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "24694188026912586",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "27237831729214857",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "7587618361329486",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "26006535105677865",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "27251086957889334",
+      "label": null,
+      "status": "excluded",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ไม่มีข้อความ ไม่นำเข้า train/test"
+    },
+    {
+      "id": "26474421952222509",
+      "label": null,
+      "status": "excluded",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ไม่มีข้อความ ไม่นำเข้า train/test"
+    },
+    {
+      "id": "26948685261462840",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "8243882489036400",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "28432935426371142",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "26475068978824473",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "24941199002211486",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "27669331349398224",
+      "label": "experience",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "25909629668701743",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "25185406124457438",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "26821918464139521",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "5948831365208202",
+      "label": null,
+      "status": "excluded",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ไม่มีข้อความ ไม่นำเข้า train/test"
+    },
+    {
+      "id": "24651162161215173",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "29211380411859969",
+      "label": null,
+      "status": "excluded",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ไม่มีข้อความ ไม่นำเข้า train/test"
+    },
+    {
+      "id": "24621912470806809",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "27545090515155642",
+      "label": null,
+      "status": "excluded",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ไม่มีข้อความ ไม่นำเข้า train/test"
+    },
+    {
+      "id": "24652702407727815",
+      "label": "unclear",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ข้อความยังไม่ระบุความต้องการชัดพอ จึงไม่เดาเจตนาจากอาการ"
+    },
+    {
+      "id": "27205612532436777",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    },
+    {
+      "id": "27521318144199546",
+      "label": "advice",
+      "status": "draft",
+      "labelSource": "assistant_manual_draft",
+      "reviewer": null,
+      "note": "ป้ายร่างจากการอ่านข้อความตัดตอน ต้องให้คนตรวจ"
+    }
+  ]
+}

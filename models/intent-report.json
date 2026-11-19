@@ -1,0 +1,169 @@
+{
+  "version": 1,
+  "labelStatus": "draft",
+  "evaluationKind": "agreement_with_assistant_draft_labels_not_human_accuracy",
+  "counts": {
+    "advice": 80,
+    "compare": 19,
+    "cost": 7,
+    "experience": 12,
+    "unclear": 61
+  },
+  "totalCorpusRows": 200,
+  "excludedNoText": 21,
+  "used": 179,
+  "trainSize": 142,
+  "testSize": 37,
+  "groupDisjoint": true,
+  "trainOnlyCvMacroF1": [
+    0.7308333333333333,
+    0.6416666666666666,
+    0.5208900226757369
+  ],
+  "macroF1": 0.8147058823529412,
+  "keywordBaselineMacroF1": 0.6771428571428573,
+  "classes": [
+    "advice",
+    "compare",
+    "cost",
+    "experience",
+    "unclear"
+  ],
+  "classificationReport": {
+    "advice": {
+      "precision": 0.7777777777777778,
+      "recall": 0.875,
+      "f1-score": 0.8235294117647058,
+      "support": 16.0
+    },
+    "compare": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 4.0
+    },
+    "cost": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 2.0
+    },
+    "experience": {
+      "precision": 1.0,
+      "recall": 0.3333333333333333,
+      "f1-score": 0.5,
+      "support": 3.0
+    },
+    "unclear": {
+      "precision": 0.75,
+      "recall": 0.75,
+      "f1-score": 0.75,
+      "support": 12.0
+    },
+    "accuracy": 0.8108108108108109,
+    "macro avg": {
+      "precision": 0.9055555555555556,
+      "recall": 0.7916666666666667,
+      "f1-score": 0.8147058823529412,
+      "support": 37.0
+    },
+    "weighted avg": {
+      "precision": 0.8228228228228228,
+      "recall": 0.8108108108108109,
+      "f1-score": 0.8020667726550079,
+      "support": 37.0
+    }
+  },
+  "confusionMatrix": [
+    [
+      14,
+      0,
+      0,
+      0,
+      2
+    ],
+    [
+      0,
+      4,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      2,
+      0,
+      0
+    ],
+    [
+      1,
+      0,
+      0,
+      1,
+      1
+    ],
+    [
+      3,
+      0,
+      0,
+      0,
+      9
+    ]
+  ],
+  "errors": [
+    {
+      "id": "26227255480272492",
+      "expected": "unclear",
+      "predicted": "advice"
+    },
+    {
+      "id": "9865554346869198",
+      "expected": "unclear",
+      "predicted": "advice"
+    },
+    {
+      "id": "9168098599948113",
+      "expected": "unclear",
+      "predicted": "advice"
+    },
+    {
+      "id": "26137973875867320",
+      "expected": "experience",
+      "predicted": "unclear"
+    },
+    {
+      "id": "27616959751302051",
+      "expected": "advice",
+      "predicted": "unclear"
+    },
+    {
+      "id": "7831610263596960",
+      "expected": "experience",
+      "predicted": "advice"
+    },
+    {
+      "id": "26821918464139521",
+      "expected": "advice",
+      "predicted": "unclear"
+    }
+  ],
+  "limitations": [
+    "All labels need human review before any claim of real-world accuracy.",
+    "The excerpts are incomplete and may include Meta-generated text.",
+    "No diagnosis, urgency prediction, medication or treatment recommendation.",
+    "The review threshold is heuristic, not calibrated."
+  ],
+  "packages": {
+    "scikit-learn": "1.9.1",
+    "numpy": "2.5.5",
+    "scipy": "1.18.1"
+  },
+  "python": "3.14.6",
+  "policyMacroF1": 0.6164912280701754,
+  "suggestionCount": 9,
+  "reviewCount": 28,
+  "labelFingerprint": "a67cfa25cec9797cb3ec67e15e162e4430e056e5c187752ece544806a5f55d3a",
+  "corpusFingerprint": "7d85630e0465940d6c6c00d36c4ea6a3d83cdf2e4b91f2ae12b4ab5531d47e62",
+  "modelVersion": "intent-char-tfidf-lr-v1-a67cfa25"
+}

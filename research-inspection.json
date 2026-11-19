@@ -1,0 +1,92 @@
+{
+  "source": "C:/intern/pettinee/17_11_26/Pettinee_Facebook_100_Posts_Research_17Nov2026.xlsx",
+  "inspectedDate": "2026-11-18",
+  "sheets": [
+    {
+      "name": "เริ่มอ่าน",
+      "detectedHeaderRow": 19,
+      "headers": [
+        "ลำดับ",
+        "Solution",
+        "ทำอะไร",
+        "หลักฐานเชิงคุณภาพจาก 100 โพสต์",
+        "Next Step"
+      ],
+      "dataRows": 5
+    },
+    {
+      "name": "100 โพสต์",
+      "detectedHeaderRow": 5,
+      "headers": [
+        "ลำดับ",
+        "หมวดหลัก (กำหนดโควตา)",
+        "รูปแบบโพสต์",
+        "สรุปโพสต์ (ถอดความ)",
+        "Pain Point ที่สังเกต",
+        "สรุปคอมเมนต์ที่อ่านได้ (ถอดความ)",
+        "สถานะคอมเมนต์",
+        "ชนิดคอมเมนต์",
+        "Solutions ที่เชื่อมโยง",
+        "แหล่งข้อมูล (URL)",
+        "ข้อควรระวัง"
+      ],
+      "dataRows": 100
+    },
+    {
+      "name": "ตัวอย่างคอมเมนต์",
+      "detectedHeaderRow": 4,
+      "headers": [
+        "#",
+        "หมวด",
+        "ประเด็นในโพสต์",
+        "สิ่งที่สมาชิกตอบ/แชร์ (ถอดความ)",
+        "ชนิดคอมเมนต์",
+        "สถานะตรวจสอบ",
+        "ลิงก์โพสต์"
+      ],
+      "dataRows": 25
+    },
+    {
+      "name": "เปรียบเทียบ Solutions",
+      "detectedHeaderRow": 4,
+      "headers": [
+        "Solution",
+        "เหมาะกับปัญหา",
+        "คุณค่าที่ลูกค้าจะได้รับ",
+        "Input / Logic ที่ควรทดลอง",
+        "KPI สำหรับ MVP",
+        "ความเสี่ยง/เงื่อนไข",
+        "ข้อเสนอ"
+      ],
+      "dataRows": 12
+    },
+    {
+      "name": "วิธีเก็บและข้อจำกัด",
+      "detectedHeaderRow": 3,
+      "headers": [
+        "หัวข้อ",
+        "รายละเอียด",
+        "เหตุผล/ผลกระทบ"
+      ],
+      "dataRows": 16
+    }
+  ],
+  "testSheet": "100 โพสต์",
+  "mapping": {
+    "postId": "",
+    "category": "หมวดหลัก (กำหนดโควตา)",
+    "text": "สรุปโพสต์ (ถอดความ)",
+    "url": "แหล่งข้อมูล (URL)",
+    "comment": "",
+    "summary": "สรุปคอมเมนต์ที่อ่านได้ (ถอดความ)",
+    "coverage": "สถานะคอมเมนต์"
+  },
+  "results": {
+    "posts": 100,
+    "newPosts": 100,
+    "duplicatePosts": 0,
+    "postsMissingCommentData": 18,
+    "postsWithParaphrasedCommentSummary": 82,
+    "postsWithVerbatimComments": 0
+  }
+}

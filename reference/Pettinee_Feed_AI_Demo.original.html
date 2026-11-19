@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="th">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pettinee · อ่านโพสต์ให้เข้าใจ</title>
+<style>
+:root{--paper:#f5f4ec;--white:#fffef9;--ink:#23352d;--muted:#52665b;--green:#1a5943;--line:#dce4d8;--mint:#e7f0e5;--cream:#f6efdf}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.55 "Noto Sans Thai","Leelawadee UI",Tahoma,sans-serif}
+button,input{font:inherit}button{cursor:pointer}a{color:var(--green)}:focus-visible{outline:3px solid #55866e;outline-offset:2px}
+header{border-bottom:1px solid var(--line);background:var(--white)}.head,main{max-width:1250px;margin:auto;padding:0 24px}.head{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:64px}.brand{font:bold 26px/1.1 system-ui;color:var(--green);letter-spacing:-1px}.badge,.pill{display:inline-block;border-radius:99px;background:var(--mint);padding:4px 10px;color:var(--green);font-size:12px;font-weight:700}
+.hero{padding:36px 0 24px}h1,h2,h3,p{margin:0}h1{font-size:clamp(30px,4vw,54px);line-height:1.2;letter-spacing:-1px}.hero p,.sub{color:var(--muted);margin-top:8px}.layout{display:grid;grid-template-columns:minmax(260px,330px) minmax(0,1fr);gap:22px;align-items:start}.pane{background:var(--white);border:1px solid var(--line);border-radius:20px;padding:20px}.feed h2{font-size:20px}.search{margin:12px 0;width:100%;border:1px solid #c8d5c9;background:#fafbf6;border-radius:10px;padding:9px 10px}.filter,.tabs,.actions{display:flex;flex-wrap:wrap;gap:7px}.filter{margin-bottom:14px}.chip,.tab,.secondary,.primary{border-radius:10px;padding:7px 11px;border:1px solid #ccd8cd;background:var(--white);color:var(--green);font-weight:700}.chip[aria-pressed=true],.tab[aria-selected=true]{background:var(--mint);border-color:#a9c0ac}.item{width:100%;text-align:left;display:block;margin:8px 0;border:1px solid var(--line);border-radius:12px;background:var(--white);padding:11px;color:var(--ink)}.item strong{display:block;margin-top:4px}.item[aria-current=true]{border-color:#78a68b;background:#edf4eb}.pre{font-size:12px;color:var(--muted)}.detail h2{font-size:27px;line-height:1.3;margin:7px 0}.actions{margin-top:14px}.tabs{border-top:1px solid var(--line);margin-top:20px;padding:13px 0;gap:6px}.tab{font-size:14px}.section{margin:9px 0 0}.section h3{font-size:19px;margin-bottom:8px}.card{border:1px solid var(--line);border-radius:12px;padding:13px 15px;margin:9px 0;background:#fafcf7}.card p{margin-top:4px}.card small{color:var(--muted)}.caution{background:var(--cream);color:#65431f}.primary{background:var(--green);color:white;border-color:var(--green)}.comment{border-left:3px solid #a8bfaa}.columns{display:grid;grid-template-columns:1fr 1fr;gap:12px}.notice{font-size:13px;color:var(--muted);margin:8px 0 0}.chat{min-height:74px}.chat p{white-space:pre-line}.footer{margin:18px 0 28px;color:var(--muted);font-size:13px}
+@media(max-width:760px){.layout,.columns{grid-template-columns:1fr}.head,main{padding:0 15px}.hero{padding-top:24px}.pane{padding:14px}.head .badge{max-width:55%;text-align:center}}
+</style>
+<header><div class="head"><div class="brand">pettinee.</div><span class="badge">ต้นแบบ · ข้อมูลคัดย่อและข้อมูลจำลอง</span></div></header>
+<main>
+<section class="hero"><h1>อ่านโพสต์ให้เข้าใจ แล้วเลือกทางไปต่อ</h1><p>ตัวอย่างจากชุดวิจัยกลุ่ม “ปรึกษาเรื่องแมว by ปอน” พร้อมมุมมองของ Pettinee</p></section>
+<div class="layout">
+<aside class="pane feed"><h2>โพสต์ในกลุ่ม</h2><input class="search" id="search" type="search" aria-label="ค้นหาโพสต์" placeholder="ค้นหา เช่น แผล น้ำพุ"><div class="filter" id="filters"></div><div id="feed"></div></aside>
+<article class="pane detail" id="detail" aria-label="รายละเอียดโพสต์"></article>
+</div>
+<p class="footer">ต้นแบบนี้ใช้คำตอบตัวอย่างที่เตรียมไว้ การเชื่อม Facebook และแชทจริงของ MeongSilJang อยู่ในขอบเขตการทดลองถัดไป</p>
+</main>
+<script>
+const posts = [
+ {id:"41",category:"หลังรักษา",source:"ถอดความจากชุดวิจัย #41",title:"แผลหลังทำหมันยังดูบวม",body:"หลังทำหมันวันที่ 5–6 แผลยังดูบวม จึงถามว่าปกติหรือไม่",url:"https://www.facebook.com/groups/1067156573375730/posts/8801464689944841/",
+  summary:[["อาการและช่วงเวลา","แผลยังดูบวมในวันที่ 5–6 หลังทำหมัน"],["สิ่งที่ลองแล้ว","รายละเอียดการดูแลระบุไม่ครบในชุดวิจัย"],["คำถามหลัก","ความบวมที่เห็นเป็นเรื่องปกติหรือควรติดต่อคลินิก?"]],
+  comments:[["ความเห็นที่ 1","ให้สังเกตอาการต่อ"],["ความเห็นที่ 2","แนะนำให้พบสัตวแพทย์"]],
+  thread:"มีสองแนวทางในข้อมูลคัดย่อ ได้แก่ สังเกตต่อและให้สัตวแพทย์ตรวจ ข้อมูลที่อ่านได้ไม่บอกผลตรวจหรือผลหลังทำตาม",
+  reviews:[["1 · ต้องดูบริบท","การเสนอให้สังเกตต่อเป็นความเห็นจากสมาชิก การเลือกแนวทางในเคสนี้ต้องอาศัยแผนหลังทำหมันและการประเมินของคลินิก","caution"],["2 · ใช้เป็นทางเลือกติดต่อ","การให้สัตวแพทย์ประเมินเป็นทางเลือกสำหรับตอบข้อสงสัยเรื่องแผล ผลการประเมินขึ้นกับเคส",""]],
+  action:"เตรียมวันที่ผ่าตัด ภาพแผล และคำแนะนำเดิมจากคลินิกสำหรับใช้สอบถามทีมรักษา",
+  chat:["คอมเมนต์ให้สองแนวทาง คือสังเกตต่อหรือให้สัตวแพทย์ประเมิน ในข้อมูลไม่มีผลตรวจที่ใช้ตัดสินว่าแต่ละแนวทางเหมาะกับเคสนี้เพียงใด","โจทย์ที่ควรถามคลินิกคือ ลักษณะที่พบตรงกับแผนหลังทำหมันที่ได้รับหรือไม่ และควรส่งรูปเพื่อให้ประเมินอย่างไร"]},
+ {id:"100",category:"อุปกรณ์",source:"ถอดความจากชุดวิจัย #100",title:"ขอรีวิวน้ำพุแมวจากผู้ใช้จริง",body:"โพสต์ถามหาประสบการณ์จากคนที่เคยใช้น้ำพุแมวจริง",url:"https://www.facebook.com/groups/1067156573375730/posts/27744147385249953/",
+  summary:[["บริบท","กำลังหาข้อมูลเพื่อเลือกน้ำพุแมว"],["สิ่งที่ลองแล้ว","ชุดข้อมูลไม่ได้บอกว่าซื้อหรือทดลองใช้รุ่นใดแล้ว"],["คำถามหลัก","ควรใช้ปัจจัยอะไรเปรียบเทียบก่อนเลือกซื้อ?"]],
+  comments:[["ประเด็นที่แชร์ 1","วัสดุของน้ำพุ"],["ประเด็นที่แชร์ 2","แบตเตอรี่"],["ประเด็นที่แชร์ 3","ความสะดวกในการทำความสะอาด"]],
+  thread:"คอมเมนต์ที่อ่านได้ให้เกณฑ์เลือกสามด้าน ได้แก่ วัสดุ แบตเตอรี่ และการทำความสะอาด แต่ข้อมูลคัดย่อยังไม่พอจัดอันดับรุ่น",
+  reviews:[["1–3 · ใช้เป็นเกณฑ์เปรียบเทียบ","ใช้รายการที่สมาชิกพูดถึงตั้งคำถามกับแต่ละรุ่น เช่น ถอดล้างกี่ชิ้น และแบตเตอรี่เปลี่ยนได้หรือไม่",""],["ความเหมาะสมขึ้นอยู่กับบ้าน","ตรวจข้อมูลของรุ่นจริงและเทียบกับพื้นที่ใช้งาน งบ และความถี่ในการล้าง","caution"]],
+  action:"ทำรายการเทียบรุ่นจากวัสดุ แบตเตอรี่ และการถอดล้าง พร้อมช่องใส่งบและเงื่อนไขของบ้าน",
+  chat:["คอมเมนต์เน้นวัสดุ แบตเตอรี่ และการถอดล้าง ใช้สามหัวข้อนี้ตั้งเป็นเกณฑ์เทียบรุ่นได้","หากเน้นล้างง่าย ลองเทียบจำนวนชิ้นที่ต้องถอด วิธีล้าง และการหาอะไหล่ของรุ่นที่สนใจ"]},
+ {id:"S1",category:"ผิวหนัง",source:"โพสต์และคอมเมนต์จำลอง",title:"แมวมีผื่น ทายาแล้วไม่ดีขึ้น",body:"แมวมีผื่นตามตัว ซื้อยามาทาแล้วไม่ดีขึ้น มียาตัวอื่นแนะนำไหม หรือควรพาไปตรวจ?",url:"",
+  summary:[["อาการ","มีผื่นตามตัวตามคำบอกเล่า"],["สิ่งที่ลองแล้ว","ซื้อยามาทา ยังไม่ทราบชื่อยาและระยะเวลาที่ใช้"],["คำถามหลัก","ควรเปลี่ยนยา หรือให้สัตวแพทย์ประเมิน?"]],
+  comments:[["คอมเมนต์จำลอง 1","ยาตัวเดิมไม่น่าดี ลองเปลี่ยนตามที่คนอื่นเคยใช้"],["คอมเมนต์จำลอง 2","ของที่บ้านเคยมีรอยคล้ายกัน แต่ให้คลินิกตรวจถึงรู้สาเหตุ"]],
+  thread:"หนึ่งความเห็นชี้ไปที่ยา อีกความเห็นแชร์ประสบการณ์ตรวจ ตัวอย่างนี้ใช้แสดงวิธีตรวจคำกล่าวอ้างก่อนนำไปใช้",
+  reviews:[["1 · ควรแก้ข้อสรุป","ข้อมูลว่าใช้แล้วไม่ดีขึ้น ยังไม่พอสรุปว่ายาคุณภาพไม่ดี การตัดสินใจเปลี่ยนยาควรผ่านการประเมินของสัตวแพทย์","caution"],["2 · แชร์ประสบการณ์","ใช้ประกอบเพื่อเข้าใจทางเลือกในการตรวจ แต่ผลตรวจของแมวอีกตัวใช้สรุปสาเหตุของเคสนี้ไม่ได้",""]],
+  action:"ทำสรุปสิ่งที่สังเกตเห็นและสิ่งที่ลองไปแล้ว พร้อมตัวเลือกส่งคำถามให้สัตวแพทย์เพื่อประเมินต่อ",
+  chat:["ส่วนที่ควรแก้คือข้อสรุปว่ายาไม่ดี และข้อเสนอให้เปลี่ยนตามแมวอีกตัว จังหวะนี้เหมาะกับการรวบรวมข้อมูลไปสอบถามสัตวแพทย์","คำถามตัวอย่างสำหรับสัตวแพทย์คือ รอยที่เห็นควรประเมินอย่างไร และชื่อยาที่ใช้เดิมมีผลต่อการประเมินหรือไม่"]},
+];
+const tabs=[["summary","สรุปโพสต์"],["comments","คอมเมนต์"],["review","ตรวจคำแนะนำ"],["chat","ถามต่อ"]];
+let active=posts[0], tab="summary", filter="ทั้งหมด";
+let saved=new Set();
+try{saved=new Set(JSON.parse(localStorage.getItem("pettinee-demo-saved")||"[]"));}catch{}
+const byId=id=>document.getElementById(id);
+const card=(h,b,cls="")=>'<div class="card '+cls+'"><strong>'+h+'</strong><p>'+b+'</p></div>';
+function feed(){
+ const labels=["ทั้งหมด","หลังรักษา","อุปกรณ์","ผิวหนัง","บันทึกไว้"];
+ byId("filters").innerHTML=labels.map(label=>'<button class="chip" data-filter="'+label+'" aria-pressed="'+(label===filter)+'">'+label+'</button>').join("");
+ const query=byId("search").value.trim();
+ const list=posts.filter(p=>(filter==="ทั้งหมด"||filter===p.category||(filter==="บันทึกไว้"&&saved.has(p.id))) &&
+  (!query||[p.title,p.category,p.body,p.thread].join(" ").includes(query)));
+ byId("feed").innerHTML=list.map(p=>'<button class="item" data-post="'+p.id+'" aria-current="'+(p===active)+'"><span class="pre">'+p.source+'</span><strong>'+p.title+'</strong></button>').join("")||
+  '<p class="notice">ไม่มีโพสต์ตรงกับการค้นหา</p>';
+}
+function detail(){
+ const p=active;
+ let panel="";
+ if(tab==="summary")panel='<h3>สรุปตัวอย่างจาก AI</h3>'+p.summary.map(([a,b])=>card(a,b)).join("")+card("ทางเลือกทำต่อ",p.action);
+ if(tab==="comments")panel='<h3>สรุปคอมเมนต์ที่อ่านได้</h3>'+card("ประเด็นรวม",p.thread)+p.comments.map(([a,b])=>card(a,b,"comment")).join("")+
+  '<p class="notice">รายการนี้เป็น '+(p.id==="S1"?"คอมเมนต์จำลอง":"ข้อความถอดความจากส่วนที่ชุดวิจัยอ่านได้")+'</p>';
+ if(tab==="review")panel='<h3>คำแนะนำแต่ละข้อใช้ได้แค่ไหน?</h3>'+p.reviews.map(([a,b,c])=>card(a,b,c)).join("")+
+  '<p class="notice">ตัวอย่างประกอบการออกแบบ เนื้อหาสุขภาพสำหรับใช้งานจริงต้องให้สัตวแพทย์ทบทวน</p>';
+ if(tab==="chat")panel='<h3>ถามต่อจากโพสต์</h3><p class="notice">เลือกคำถามเพื่อดูคำตอบจำลองตามโพสต์ที่เปิดอยู่</p>'+
+  '<div class="actions"><button class="secondary" data-chat="0">คอมเมนต์นี้ใช้ได้แค่ไหน?</button><button class="secondary" data-chat="1">แล้วควรทำอะไรต่อ?</button></div>'+
+  '<div class="card chat" aria-live="polite" id="reply">คำตอบจะปรากฏที่นี่</div>'+
+  '<a href="https://meongsiljang.com/ko" target="_blank" rel="noopener noreferrer">เปิดเว็บ MeongSilJang ↗</a>'+
+  '<p class="notice">ลิงก์เปิดเว็บแยกจากเดโม ไม่มีการส่งข้อความหรือข้อมูลโพสต์ไปพร้อมลิงก์</p>';
+ byId("detail").innerHTML='<span class="pill">'+p.source+'</span><h2>'+p.title+'</h2><p>'+p.body+'</p>'+
+  '<div class="actions"><button class="secondary" data-save="true" aria-pressed="'+saved.has(p.id)+'">'+(saved.has(p.id)?"บันทึกแล้ว":"บันทึกโพสต์")+'</button>'+
+  (p.url?'<a class="secondary" href="'+p.url+'" target="_blank" rel="noopener noreferrer">ดูโพสต์ต้นทาง ↗</a>':"")+'</div>'+
+  '<div class="tabs" role="tablist" aria-label="มุมมองโพสต์">'+tabs.map(([k,v])=>'<button class="tab" id="tab-'+k+'" role="tab" data-tab="'+k+'" aria-selected="'+(k===tab)+'" aria-controls="post-panel">'+v+'</button>').join("")+
+  '</div><section class="section" id="post-panel" role="tabpanel" aria-labelledby="tab-'+tab+'">'+panel+'</section>';
+}
+byId("search").addEventListener("input",feed);
+document.addEventListener("click",event=>{
+ const b=event.target.closest("button"); if(!b)return;
+ if(b.dataset.filter){filter=b.dataset.filter;feed();document.querySelector('[aria-pressed="true"][data-filter]')?.focus();}
+ if(b.dataset.post){active=posts.find(p=>p.id===b.dataset.post);tab="summary";feed();detail();byId("tab-summary")?.focus();}
+ if(b.dataset.tab){tab=b.dataset.tab;detail();byId("tab-"+tab)?.focus();}
+ if(b.dataset.chat!==undefined)byId("reply").textContent=active.chat[Number(b.dataset.chat)];
+ if(b.dataset.save){
+  if(saved.has(active.id))saved.delete(active.id);else saved.add(active.id);
+  try{localStorage.setItem("pettinee-demo-saved",JSON.stringify([...saved]));}catch{}
+  feed();detail();document.querySelector("[data-save]")?.focus();
+ }
+});
+feed();detail();
+</script>
+</html>
