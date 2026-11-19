@@ -1,0 +1,43 @@
+# รุ่นออนไลน์ของ Pettinee
+
+เผยแพร่ผ่าน Sites แบบ public ผู้ที่มีลิงก์เข้าได้โดยไม่ต้องติดตั้ง Node.js ไม่มี API key หรือบริการ LLM ที่คิดค่าตามการใช้งานผูกไว้ในรุ่นนี้
+
+## รุ่นออนไลน์ต่างจากรุ่นภายในเครื่องอย่างไร
+
+- หน้าเลือกโพสต์ ค้นข้อความ หมวด บันทึก Excel และสรุปถามต่อใช้ UI เดิม
+- ชุดเริ่มต้นเป็นเคสจำลอง 6 รายการ ไม่เผยแพร่ Excel วิจัย Facebook, corpus, annotations, รายการทำนายผิด หรือประวัติชุดวิจัย
+- ผู้ใช้เลือกนำเข้า Excel ของตนเองได้ ไฟล์อ่านในเบราว์เซอร์ ไม่มีการอัปโหลดไป server
+- โพสต์ บันทึก และภาพเก็บใน localStorage ของผู้ใช้แต่ละเครื่อง ไม่ซิงก์และไม่แชร์ข้ามผู้ใช้
+- Intent ML ใช้ coefficients/vocabulary ของโมเดลเดิมและทำนายในเบราว์เซอร์ ป้ายฝึกยังเป็นร่าง ไม่ใช่การประเมินโรค
+- คู่มือเริ่มค้นด้วย lexical TF-IDF และกฎหัวข้อที่แสดงสถานะตามจริง ไม่โหลด encoder ขนาดใหญ่เมื่อเปิดหน้า
+- ปุ่ม **ค้นหาเพิ่มด้วย ML ความหมาย** จะโหลด multilingual MiniLM q8 ประมาณ 135 MB จาก Hugging Face ตาม revision ที่ตรึงไว้ แล้วรัน ONNX WebAssembly ใน Web Worker ข้อความค้นไม่ได้ส่งไป embedding API
+- ความสามารถด้าน WebAssembly และพื้นที่ cache ขึ้นกับเบราว์เซอร์ อุปกรณ์ และการเชื่อมต่อ หากโหลดไม่สำเร็จยังเปิดคลังคู่มือต้นฉบับได้
+- การตรวจ/แก้ป้ายฝึกใช้เฉพาะรุ่นภายในทีม ไม่มี endpoint ให้คนทั่วไปแก้ชุดฝึก
+- การสรุปและร่างข้อความยังเป็นแม่แบบ Demo ไม่ใช่ LLM และไม่มีการส่งข้อความเข้า MeongSilJang หรือคลินิกอัตโนมัติ
+
+## Build
+
+```powershell
+npm.cmd ci
+npm.cmd run build:public
+npm.cmd test
+```
+
+`hosting/build-public.mjs` คัดไฟล์ตามรายการที่กำหนดและสร้าง `sites/pettinee-public/dist` จากซอร์สเดิม ไม่คัดทั้ง workspace และไม่คัด `.env` โมเดล ONNX ขนาดใหญ่ไม่ได้รวมใน artifact แต่ดาวน์โหลดเมื่อผู้ใช้เปิด semantic search
+
+ไฟล์ `hosting/site.json` เก็บ Site ID เดิมที่ต้องใช้ซ้ำ เมื่อ build จะเขียน `.openai/hosting.json` ในโฟลเดอร์ Sites อย่าง atomic และปฏิเสธหากพบ Site ID อื่น โฟลเดอร์ `sites/` เป็น checkout/build แยกและอยู่ใน `.gitignore` ของ repo หลัก
+
+ไฟล์สำคัญ:
+
+- `hosting/browser-api.mjs`: จัดการคำขอ `/api/*` ภายในเบราว์เซอร์ ไม่ใช่ HTTP API ที่ให้บริการบน server
+- `hosting/entry.mjs`: เปิดเว็บและปุ่มดาวน์โหลดโมเดลแบบผู้ใช้เลือกเอง
+- `hosting/guide-worker.mjs`: โหลด encoder และคำนวณเวกเตอร์ใน Worker
+- `lib/guide-match.mjs`: จัดอันดับคู่มือ รองรับ lexical-only และ semantic hybrid โดยแยกวิธีไว้
+- `tests/public-hosting.test.mjs`: ตรวจไฟล์ที่เผยแพร่ การประมวลผลภายในเบราว์เซอร์แบบจำลอง และเส้นทางเลือกโพสต์จนคัดลอกข้อความ
+- `tests/wasm-encoder.test.mjs`: รันโมเดล q8 ด้วย ONNX WebAssembly จริงใน Node เพื่อเช็กความเข้ากันได้เชิงคำนวณ ไม่ใช่การตรวจ UI บนเบราว์เซอร์จริง
+
+## เผยแพร่รุ่นถัดไป
+
+ใช้ Site ID เดิมใน `hosting/site.json` และ credential ชั่วคราวจาก Sites ซึ่งต้องเก็บในหน่วยความจำ ส่งเข้า helper ทาง stdin เท่านั้น ไม่ใส่ token ในไฟล์หรือ Git หลัง build/test ให้ใช้ Sites source helper commit/push ซอร์สที่ตรงกับ artifact บันทึก version แล้ว deploy version นั้น โดยรักษา audience เป็น public ตามการตั้งค่าครั้งนี้
+
+ผลตรวจรอบนี้ 71 automated tests ผ่าน ตัวควบคุมเบราว์เซอร์ยังไม่พร้อม จึงไม่ได้ยืนยันภาพหน้าจอ การโหลดโมเดลผ่าน CDN ในเบราว์เซอร์จริง หรือการใช้งานบนมือถือจริง

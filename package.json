@@ -6,6 +6,7 @@
   "description": "Pettinee local Thai Facebook research reader and Excel import demo",
   "scripts": {
     "start": "node server.mjs",
+    "build:public": "node hosting/build-public.mjs",
     "test": "node --test tests/*.test.mjs",
     "train:intent": "python ml/train.py",
     "prepare:search": "node ml/prepare_search_corpus.mjs",
