@@ -35,8 +35,8 @@ export function createWorkflowHTTP(service,{operatorToken='',ingestToken=''}={})
   if(path==='/api/workflow/mock/stop')return {body:service.stopMock()};
   if(path==='/api/workflow/connections/page/verify')return {body:await service.page.verify()};
   if(path==='/api/workflow/page/import')return {status:202,body:await service.importPage(body.postId)};
-  const match=path.match(/^\/api\/workflow\/posts\/([a-f\d-]{36})\/(draft|approve|copy|manual|publish|retry|resolve)$/);
-  if(match){const operations={draft:'edit',approve:'approve',copy:'copy',manual:'manual',publish:'publish',retry:'retry',resolve:'resolvePublication'};return {body:await service[operations[match[2]]](match[1],body)};}
+  const match=path.match(/^\/api\/workflow\/posts\/([a-f\d-]{36})\/(draft|approve|copy|manual|publish|retry|resolve|comment-preview|comment-send)$/);
+  if(match){const operations={draft:'edit',approve:'approve',copy:'copy',manual:'manual',publish:'publish',retry:'retry',resolve:'resolvePublication','comment-preview':'prepareComment','comment-send':'sendComment'};return {body:await service[operations[match[2]]](match[1],body)};}
   throw workflowError('ไม่พบเส้นทางนี้',404);
  };
 }

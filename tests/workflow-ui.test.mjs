@@ -12,9 +12,9 @@ import {createAppServer} from '../server.mjs';
 import {encoder} from '../guides/encoder.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url));
 async function waitFor(fn,label){for(let i=0;i<500;i++){if(fn())return;await delay(10);}assert.fail('Timed out: '+label);}
-async function boot(t,{backend=true}={}){
+async function boot(t,{backend=true,browserPublisher=null}={}){
  const parent=resolve(root,'tmp');await mkdir(parent,{recursive:true});const dir=await mkdtemp(join(parent,'workflow-ui-'));
- const server=backend?createAppServer({workflowOptions:{dbPath:join(dir,'queue.sqlite'),autoRun:false}}):null;
+ const server=backend?createAppServer({workflowOptions:{dbPath:join(dir,'queue.sqlite'),autoRun:false,browserPublisher}}):null;
  if(server)await new Promise(r=>server.listen(0,'127.0.0.1',r));
  // Initialize native ONNX before installing browser globals for the DOM double.
  if(server)await encoder();
@@ -55,4 +55,19 @@ test('Inbox receives JSON and existing Excel parser, merges rows and reports dup
 });
 test('static site reports missing server and unavailable permissions without fabricated connection',async t=>{
  const b=await boot(t,{backend:false});await b.ui.showDashboard();assert.match(b.document.body.textContent,/Inbox ต้องใช้ server/);assert.match(b.document.body.textContent,/ไม่ได้เชื่อม Facebook Group/);assert.equal(b.document.querySelector('[data-wf-action="mock"]'),null);
+});
+test('admin sends Demo from the Dashboard without clipboard and it never counts as published',async t=>{
+ const b=await boot(t);b.server.workflow.mock({scenario:'neuter'});await b.server.workflow.runOnce();await b.host.go('inbox');b.click('[data-wf-post]');await waitFor(()=>b.document.querySelector('#wf-draft'),'draft');b.ui.stop();
+ b.document.querySelector('#wf-ack').checked=true;b.click('[data-wf-action="approve"]');await waitFor(()=>b.document.querySelector('[data-comment-action="prepare-demo"]'),'send button');
+ b.click('[data-comment-action="prepare-demo"]');await waitFor(()=>b.document.querySelector('#comment-send-dialog[open]'),'Demo preview');assert.equal(b.document.querySelector('#comment-send-text').value,b.server.workflow.list().posts[0].draft);
+ b.click('[data-comment-action="confirm"]');await waitFor(()=>b.document.querySelector('#comment-send-message').textContent.includes('กรุณา'),'explicit final confirmation');assert.equal(b.server.workflow.detail(b.server.workflow.list().posts[0].id).demoComment,null);
+ b.document.querySelector('#comment-send-ack').checked=true;b.click('[data-comment-action="confirm"]');await waitFor(()=>b.document.querySelector('#wf-detail').textContent.includes('ทดลองส่ง Demo เวอร์ชัน'),'Demo receipt');
+ const p=b.server.workflow.detail(b.server.workflow.list().posts[0].id);assert.equal(p.status,'approved');assert.equal(p.publication,null);assert.ok(p.demoComment);assert.equal(b.writes.length,0);
+});
+test('admin reviews source/account and sends one approved comment through HTTP; untrusted account stays literal',async t=>{
+ let sends=0;const browserPublisher={enabled:true,groupId:'1067156573375730',status:()=>({ready:true}),prepare:async()=>({url:'https://www.facebook.com/groups/1067156573375730/posts/100/',account:'<img src=x onerror=alert(1)> Admin'}),send:async()=>{sends++;return {id:'900',url:'https://www.facebook.com/groups/1067156573375730/posts/100/?comment_id=900'};},close:async()=>{}};
+ const b=await boot(t,{browserPublisher});b.server.workflow.ingest({sourceType:'group',authorized:true,externalId:'1067156573375730:100',url:'https://www.facebook.com/groups/1067156573375730/posts/100/',text:'หลังทำหมันแผลบวม อยากอ่านข้อมูลเพิ่มเติม'});await b.server.workflow.runOnce();await b.host.go('inbox');b.click('[data-wf-post]');await waitFor(()=>b.document.querySelector('#wf-draft'),'draft');b.ui.stop();
+ b.document.querySelector('#wf-ack').checked=true;b.click('[data-wf-action="approve"]');await waitFor(()=>b.document.querySelector('[data-comment-action="prepare-live"]'),'live button');b.click('[data-comment-action="prepare-live"]');await waitFor(()=>b.document.querySelector('#comment-send-dialog[open]'),'live preview');
+ assert.equal(sends,0);assert.equal(b.document.querySelector('#comment-send-dialog img'),null);assert.match(b.document.querySelector('#comment-send-dialog').textContent,/<img/);assert.match(b.document.querySelector('#comment-send-dialog a').href,/groups\/1067156573375730\/posts\/100\//);
+ b.document.querySelector('#comment-send-ack').checked=true;b.click('[data-comment-action="confirm"]');b.click('[data-comment-action="confirm"]');await waitFor(()=>b.document.querySelector('#wf-detail .pill')?.textContent==='ตอบแล้ว','visible receipt rendered');assert.equal(sends,1);assert.equal(b.writes.length,0);assert.equal(b.server.workflow.detail(b.server.workflow.list().posts[0].id).publication.method,'browser-ui');
 });

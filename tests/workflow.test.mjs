@@ -91,4 +91,13 @@ test('HTTP workflow authentication, connector ingestion and source permission re
  assert.equal((await request('/api/sources/events',event)).status,401);const received=await request('/api/sources/events',event,'connector-test');assert.equal(received.status,202);const payload=await received.json();assert.equal((await (await request('/api/sources/events',event,'connector-test')).json()).duplicate,true);
  await server.workflow.runOnce();const detail=await (await request('/api/workflow/posts/'+payload.post.id)).json();assert.ok(detail.guides.length);assert.equal((await request('/api/workflow/posts/'+detail.id+'/publish',{revision:detail.revision})).status,403);
  assert.equal((await fetch(base+'/data/runtime/workflow.sqlite')).status,404);assert.equal((await fetch(base+'/api/workflow/status',{headers:{Origin:'https://evil.test'}})).status,403);
+ const commentPath='/api/workflow/posts/'+detail.id;
+ assert.equal((await request(commentPath+'/comment-preview',{revision:detail.revision,mode:'demo'},'wrong')).status,401);
+ assert.equal((await request(commentPath+'/comment-send',{revision:detail.revision,ticketId:'forged',confirmed:true},'wrong')).status,401);
+ assert.equal((await request(commentPath+'/comment-preview',{revision:detail.revision,mode:'demo'})).status,409);
+ server.workflow.approve(detail.id,{revision:detail.revision,acknowledged:true});
+ const preview=await (await request(commentPath+'/comment-preview',{revision:detail.revision,mode:'demo'})).json();assert.equal(preview.simulated,true);
+ assert.equal((await request(commentPath+'/comment-send',{revision:detail.revision,ticketId:'forged',confirmed:true})).status,409);
+ const denied=await fetch(base+commentPath+'/comment-send',{method:'POST',headers:{Authorization:'Bearer operator-test','Content-Type':'application/json',Origin:'https://evil.test'},body:JSON.stringify({ticketId:preview.ticketId,revision:detail.revision,confirmed:true})});assert.equal(denied.status,403);
+ const sent=await request(commentPath+'/comment-send',{ticketId:preview.ticketId,revision:detail.revision,confirmed:true});assert.equal(sent.status,200);assert.equal((await sent.json()).published,false);assert.equal(server.workflow.detail(detail.id).status,'approved');
 });

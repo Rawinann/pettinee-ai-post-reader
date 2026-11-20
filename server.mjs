@@ -7,6 +7,8 @@ import { createIntentService } from './server/intent.mjs';
 import { createGuideService } from './server/guides.mjs';
 import { createWorkflowService } from './server/workflow.mjs';
 import { createWorkflowHTTP } from './server/workflow-http.mjs';
+import {createBrowserCommentPublisher} from './automation/comment-driver.mjs';
+import {collectorConfig} from './automation/config.mjs';
 
 const projectDir = dirname(fileURLToPath(import.meta.url));
 const files = new Map([
@@ -24,6 +26,7 @@ const files = new Map([
   ['/lib/intent-ui.mjs', ['lib/intent-ui.mjs', 'text/javascript; charset=utf-8']],
   ['/lib/guide-ui.mjs', ['lib/guide-ui.mjs', 'text/javascript; charset=utf-8']],
   ['/lib/workflow-ui.mjs', ['lib/workflow-ui.mjs', 'text/javascript; charset=utf-8']],
+  ['/lib/comment-ui.mjs', ['lib/comment-ui.mjs', 'text/javascript; charset=utf-8']],
   ['/lib/workflow-policy.mjs', ['lib/workflow-policy.mjs', 'text/javascript; charset=utf-8']],
   ['/lib/guide-match.mjs', ['lib/guide-match.mjs', 'text/javascript; charset=utf-8']],
   ['/data/Pettinee_Facebook_200_Posts_Public_Excerpts_19Nov2026.xlsx', ['data/Pettinee_Facebook_200_Posts_Public_Excerpts_19Nov2026.xlsx','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']],
@@ -186,17 +189,18 @@ export function createAppServer({ provider = null, rootDir = projectDir, maxBody
 
 const direct = process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href;
 if (direct) {
-  const port = Number(process.env.PORT || 4173);
+  const port = Number(process.argv.includes('--reply-server')?(process.env.COLLECTOR_APP_PORT||4187):(process.env.PORT||4173));
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('PORT must be between 1 and 65535');
   const listenHost=process.env.HOST||'127.0.0.1';
   if(!['127.0.0.1','localhost','::1'].includes(listenHost)&&(!process.env.PUBLIC_ORIGIN||!process.env.OPERATOR_TOKEN))throw Error('External hosting requires PUBLIC_ORIGIN and OPERATOR_TOKEN');
-  const server = createAppServer({publicOrigin:process.env.PUBLIC_ORIGIN||'',workflowOptions:{
+  const replyConfig=collectorConfig(projectDir),browserPublisher=(process.argv.includes('--browser-replies')||process.env.BROWSER_REPLY_ENABLED==='true')?createBrowserCommentPublisher({profileDir:replyConfig.profileDir,groupId:replyConfig.groupId,channel:replyConfig.channel}):null;
+  const server = createAppServer({publicOrigin:process.env.PUBLIC_ORIGIN||'',workflowOptions:{browserPublisher,
     ...(process.env.WORKFLOW_DB_PATH?{dbPath:resolve(process.env.WORKFLOW_DB_PATH)}:{}),operatorToken:process.env.OPERATOR_TOKEN||'',ingestToken:process.env.INGEST_TOKEN||'',
     chatbotUrl:process.env.MEONGSILJANG_URL||'https://meongsiljang.com/th',televetUrl:process.env.TELEVET_URL||'',
     meta:{pageId:process.env.META_PAGE_ID||'',appId:process.env.META_APP_ID||'',accessToken:process.env.META_PAGE_ACCESS_TOKEN||'',appSecret:process.env.META_APP_SECRET||'',verifyToken:process.env.META_VERIFY_TOKEN||'',graphVersion:process.env.META_GRAPH_VERSION||'',publishEnabled:process.env.META_PAGE_PUBLISH_ENABLED==='true'},
   }});
   server.on('error', error => {
-    console.error(error.code === 'EADDRINUSE' ? `Port ${port} is already in use. Set PORT to another port.` : 'Unable to start Pettinee local server.');
+    console.error(error.code === 'EADDRINUSE' ? `Port ${port} is already in use. Set ${process.argv.includes('--reply-server')?'COLLECTOR_APP_PORT':'PORT'} to another port.` : 'Unable to start Pettinee local server.');
     process.exitCode = 1;
   });
   server.listen(port, listenHost, () => {
