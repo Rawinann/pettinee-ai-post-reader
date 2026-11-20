@@ -19,7 +19,8 @@ export function installBrowserAPI({fetcher=globalThis.fetch.bind(globalThis),wor
   let body;try{body=JSON.parse(options?.body||'{}');}catch{return json({error:'ข้อมูลไม่ใช่ JSON'},400);}
   try{
    switch(url.pathname){
-    case '/api/config':return json({mode:'demo',aiAvailable:false,publicDemo:true,browserML:true});
+    case '/api/config':return json({mode:'demo',aiAvailable:false,publicDemo:true,browserML:true,workflowAvailable:false});
+    case '/api/workflow/status':return json({available:false,reason:'Node.js/SQLite backend required; no Facebook connection on static site'});
     case '/api/intent/status':{const m=await model();return json({ready:true,trainingLabelStatus:m.trainingLabelStatus,reviewedCount:0,draftCount:179,excludedCount:21,report:m.evaluation,publicDemo:true});}
     case '/api/intent/classify':{if(typeof body.text!=='string'||body.text.length>10000)return json({error:'ส่งข้อความไม่เกิน 10,000 ตัวอักษร'},400);const m=await model();return json({...predictIntent(m,body.text),trainingLabelStatus:m.trainingLabelStatus,modelVersion:m.version});}
     case '/api/intent/annotations':return json({error:'การตรวจป้ายชุดวิจัยใช้ได้เฉพาะเวอร์ชันภายในทีม'},403);

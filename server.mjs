@@ -5,6 +5,8 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createAnalysisService, ProviderUnavailableError } from './server/provider.mjs';
 import { createIntentService } from './server/intent.mjs';
 import { createGuideService } from './server/guides.mjs';
+import { createWorkflowService } from './server/workflow.mjs';
+import { createWorkflowHTTP } from './server/workflow-http.mjs';
 
 const projectDir = dirname(fileURLToPath(import.meta.url));
 const files = new Map([
@@ -12,6 +14,7 @@ const files = new Map([
   ['/Pettinee_Feed_AI_Demo.html', ['Pettinee_Feed_AI_Demo.html', 'text/html; charset=utf-8']],
   ['/app.mjs', ['app.mjs', 'text/javascript; charset=utf-8']],
   ['/styles.css', ['styles.css', 'text/css; charset=utf-8']],
+  ['/workflow.css', ['workflow.css', 'text/css; charset=utf-8']],
   ['/config.js', ['config.js', 'text/javascript; charset=utf-8']],
   ['/lib/import.mjs', ['lib/import.mjs', 'text/javascript; charset=utf-8']],
   ['/lib/analysis.mjs', ['lib/analysis.mjs', 'text/javascript; charset=utf-8']],
@@ -20,6 +23,9 @@ const files = new Map([
   ['/lib/intent.mjs', ['lib/intent.mjs', 'text/javascript; charset=utf-8']],
   ['/lib/intent-ui.mjs', ['lib/intent-ui.mjs', 'text/javascript; charset=utf-8']],
   ['/lib/guide-ui.mjs', ['lib/guide-ui.mjs', 'text/javascript; charset=utf-8']],
+  ['/lib/workflow-ui.mjs', ['lib/workflow-ui.mjs', 'text/javascript; charset=utf-8']],
+  ['/lib/workflow-policy.mjs', ['lib/workflow-policy.mjs', 'text/javascript; charset=utf-8']],
+  ['/lib/guide-match.mjs', ['lib/guide-match.mjs', 'text/javascript; charset=utf-8']],
   ['/data/Pettinee_Facebook_200_Posts_Public_Excerpts_19Nov2026.xlsx', ['data/Pettinee_Facebook_200_Posts_Public_Excerpts_19Nov2026.xlsx','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']],
   ['/lib/experience-ui.mjs', ['lib/experience-ui.mjs', 'text/javascript; charset=utf-8']],
   ['/data/demo-posts.mjs', ['data/demo-posts.mjs', 'text/javascript; charset=utf-8']],
@@ -100,14 +106,19 @@ export function validatePostPayload(payload) {
   return post;
 }
 
-export function createAppServer({ provider = null, rootDir = projectDir, maxBodyBytes = 1_000_000 } = {}) {
+export function createAppServer({ provider = null, rootDir = projectDir, maxBodyBytes = 1_000_000, workflowOptions = null, publicOrigin = '' } = {}) {
   const service = createAnalysisService({ provider });
   const intent = createIntentService(rootDir);
   const guides = createGuideService(rootDir);
+  const configuredOrigin=publicOrigin?new URL(publicOrigin).origin:'';
+  if(configuredOrigin&&!configuredOrigin.startsWith('https://'))throw Error('PUBLIC_ORIGIN must use HTTPS');
+  if(configuredOrigin&&(!workflowOptions?.operatorToken||workflowOptions.operatorToken.length<32))throw Error('Public operator server requires OPERATOR_TOKEN of at least 32 characters');
+  const workflow=workflowOptions?createWorkflowService({rootDir,dbPath:resolve(rootDir,'data/runtime/workflow.sqlite'),intent,guides,...workflowOptions}):null;
+  const workflowHTTP=workflow?createWorkflowHTTP(workflow,workflowOptions):null;
   const server = createServer(async (req, res) => {
     try {
-      if (!validHost(req.headers.host)) return fail(res, 403, 'เปิดได้เฉพาะชื่อเครื่อง localhost');
-      if (req.headers.origin && req.headers.origin !== `http://${req.headers.host}`) return fail(res, 403, 'ไม่อนุญาตคำขอจากเว็บไซต์อื่น');
+      if (!validHost(req.headers.host)&&!(configuredOrigin&&req.headers.host?.toLowerCase()===new URL(configuredOrigin).host.toLowerCase())) return fail(res, 403, 'ชื่อเครื่องไม่อยู่ในรายการที่อนุญาต');
+      if (req.headers.origin && req.headers.origin !== `http://${req.headers.host}`&&req.headers.origin!==configuredOrigin) return fail(res, 403, 'ไม่อนุญาตคำขอจากเว็บไซต์อื่น');
       let pathname;
       try {
         pathname = decodeURIComponent(new URL(req.url, `http://${req.headers.host}`).pathname);
@@ -116,8 +127,14 @@ export function createAppServer({ provider = null, rootDir = projectDir, maxBody
       }
       if (pathname.includes('\\') || pathname.includes('\0')) return fail(res, 400, 'ที่อยู่ไม่ถูกต้อง');
 
+      if(pathname.startsWith('/api/workflow/')||pathname==='/api/sources/events'||pathname==='/webhooks/meta'){
+        if(!workflowHTTP)return fail(res,503,'ระบบ Inbox ต้องใช้ Node server พร้อม SQLite');
+        const result=await workflowHTTP(req,new URL(req.url,configuredOrigin||`http://${req.headers.host}`));
+        return send(res,result.status||200,result.body,result.type||'application/json; charset=utf-8');
+      }
+
       if (pathname === '/api/config' && req.method === 'GET') {
-        return send(res, 200, { mode: service.available ? 'ai' : 'demo', aiAvailable: service.available });
+        return send(res, 200, { mode: service.available ? 'ai' : 'demo', aiAvailable: service.available,...(workflow?{workflowAvailable:true,operatorAuthRequired:!!workflowOptions.operatorToken,brand:'แอพคุณหมอใจดี'}:{}) });
       }
       if(pathname==='/api/intent/status'&&req.method==='GET')return send(res,200,await intent.status());
       if(pathname==='/api/guides/status'&&req.method==='GET')return send(res,200,await guides.status());
@@ -162,6 +179,8 @@ export function createAppServer({ provider = null, rootDir = projectDir, maxBody
   });
   server.requestTimeout = 30000;
   server.headersTimeout = 15000;
+  server.workflow=workflow;
+  if(workflow)server.on('close',()=>{workflow.close().catch(()=>{});});
   return server;
 }
 
@@ -169,13 +188,20 @@ const direct = process.argv[1] && import.meta.url === pathToFileURL(resolve(proc
 if (direct) {
   const port = Number(process.env.PORT || 4173);
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('PORT must be between 1 and 65535');
-  const server = createAppServer();
+  const listenHost=process.env.HOST||'127.0.0.1';
+  if(!['127.0.0.1','localhost','::1'].includes(listenHost)&&(!process.env.PUBLIC_ORIGIN||!process.env.OPERATOR_TOKEN))throw Error('External hosting requires PUBLIC_ORIGIN and OPERATOR_TOKEN');
+  const server = createAppServer({publicOrigin:process.env.PUBLIC_ORIGIN||'',workflowOptions:{
+    ...(process.env.WORKFLOW_DB_PATH?{dbPath:resolve(process.env.WORKFLOW_DB_PATH)}:{}),operatorToken:process.env.OPERATOR_TOKEN||'',ingestToken:process.env.INGEST_TOKEN||'',
+    chatbotUrl:process.env.MEONGSILJANG_URL||'https://meongsiljang.com/th',televetUrl:process.env.TELEVET_URL||'',
+    meta:{pageId:process.env.META_PAGE_ID||'',appId:process.env.META_APP_ID||'',accessToken:process.env.META_PAGE_ACCESS_TOKEN||'',appSecret:process.env.META_APP_SECRET||'',verifyToken:process.env.META_VERIFY_TOKEN||'',graphVersion:process.env.META_GRAPH_VERSION||'',publishEnabled:process.env.META_PAGE_PUBLISH_ENABLED==='true'},
+  }});
   server.on('error', error => {
     console.error(error.code === 'EADDRINUSE' ? `Port ${port} is already in use. Set PORT to another port.` : 'Unable to start Pettinee local server.');
     process.exitCode = 1;
   });
-  server.listen(port, '127.0.0.1', () => {
-    console.log(`Pettinee Demo: http://127.0.0.1:${port}`);
-    console.log('Local only. Intent and guide matching use local ML; response summaries are prepared Demo templates.');
+  server.listen(port, listenHost, () => {
+    console.log(`แอพคุณหมอใจดี โดย Pettinee: ${process.env.PUBLIC_ORIGIN||'http://127.0.0.1:'+port}`);
+    console.log('SQLite Inbox + local ML. Human review is required; Facebook and product connections depend on configuration.');
   });
+  for(const signal of ['SIGINT','SIGTERM'])process.once(signal,()=>server.close());
 }

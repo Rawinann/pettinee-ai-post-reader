@@ -1,4 +1,14 @@
-# Pettinee AI Post Reader
+# แอพคุณหมอใจดี — โดย Pettinee
+
+เพิ่ม workflow ผู้ดูแลในโปรเจกต์เดิมตาม VPC กลุ่ม Mass: รับ event/นำเข้าโพสต์ → SQLite queue → Intent ML เดิม → Topic rules แยกส่วน → MiniLM จับคู่คู่มือเดิม → ร่างคำตอบสั้น → แก้ไขและอนุมัติ → คัดลอกหรือส่งผ่าน Page ที่มีสิทธิ์ มี Dashboard / Inbox / Settings และ Mock ที่วิ่งผ่าน pipeline จริง
+
+**เริ่มทดลอง:** Node 22.13+ → `npm.cmd ci` → `npm.cmd run guides:download` → `npm.cmd start` → <http://127.0.0.1:4173> → ภาพรวม → รับ 1 โพสต์ → Inbox → อนุมัติและคัดลอก ไม่ต้องมี API key สำหรับ workflow นี้
+
+ดู [วิธีใช้ คิว API และตัวแปรตั้งค่า](docs/WORKFLOW.md), [Facebook Page/Group และสิทธิ์](docs/FACEBOOK-INTEGRATION.md), [VPC coverage](VPC_COVERAGE.md), [.env.example](.env.example)
+
+**สถานะจริง:** Core และ ML สองส่วนทำงานบน Node ร่างเป็นแม่แบบอิง metadata ไม่ใช่ LLM Page adapter ยังไม่มี credentials ให้เชื่อมจริง Group รอช่องทางที่มีสิทธิ์ Chatbot/Televet เป็นลิงก์ภายนอก **เว็บออนไลน์ด้านล่างยังเป็น static reader; Inbox server ต้องรัน Node บนเครื่องหรือ host ที่มี persistent disk**
+
+---
 
 เว็บต้นแบบภาษาไทยสำหรับอ่านโพสต์เรื่องแมว ใช้ ML จำแนกความต้องการ จับคู่คู่มือที่เกี่ยวข้อง และเตรียมคำถามสำหรับ MeongSilJang หรือสัตวแพทย์ ทำงานบนเครื่องโดยไม่ใช้ API key
 

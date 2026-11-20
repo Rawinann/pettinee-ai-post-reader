@@ -19,3 +19,7 @@ __pycache__/
 .DS_Store
 Thumbs.db
 /sites/
+/data/runtime/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm

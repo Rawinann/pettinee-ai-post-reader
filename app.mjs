@@ -7,6 +7,7 @@ import { PUBLIC_FILE, postOnlyGuide } from './lib/public-posts.mjs';
 import { createIntentUI, intentCard } from './lib/intent-ui.mjs';
 import { INTENTS } from './lib/intent.mjs';
 import { createGuideUI, guideCard } from './lib/guide-ui.mjs';
+import { createWorkflowUI } from './lib/workflow-ui.mjs';
 
 const $ = id => document.getElementById(id);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -16,6 +17,8 @@ const state = { view:'feed', reading:false, feedPage:1, posts:copy(demoPosts), a
 let experience;
 let intentUI;
 let guideUI;
+let workflowUI;
+let navigated=false;
 let toastTimer;
 
 function notify(message) { $('toast').textContent=message; $('toast').hidden=false; clearTimeout(toastTimer); toastTimer=setTimeout(()=>$('toast').hidden=true,4200); }
@@ -40,14 +43,14 @@ for(const p of demoPosts.filter(p=>p.provenance==='simulated'&&!state.posts.some
 for(const p of state.posts.filter(p=>!p.fileName&&demoPosts.some(example=>example.id===p.id&&example.text===p.text))) { try { const a=analyzeDemo(p);validateAnalysis(a,p);state.analyses[p.id]=a; }catch{} }
 if(!state.posts.some(p=>p.id===state.active))state.active=state.posts[0]?.id;
 function persist(){ try{localStorage.setItem(STORE,JSON.stringify({posts:state.posts,saved:[...state.saved],analyses:state.analyses,batches:state.batches}));return true;}catch{notify('พื้นที่เบราว์เซอร์ไม่พอ ข้อมูลรอบนี้ใช้ได้ในหน้าปัจจุบัน แต่ยังบันทึกหลังปิดหน้าไม่ได้');return false;} }
-fetch('/api/config').then(r=>r.ok?r.json():{}).then(c=>{state.aiAvailable=c.aiAvailable===true;}).catch(()=>{});
+fetch('/api/config').then(r=>r.ok?r.json():{}).then(c=>{state.aiAvailable=c.aiAvailable===true;if(c.workflowAvailable){document.querySelector('.mode').textContent='ระบบผู้ดูแล';document.querySelector('footer p').textContent='Inbox เก็บคิวบน server · ผู้อ่านเก็บรายการบันทึกในเครื่อง · ตรวจคำตอบก่อนส่งทุกครั้ง';if(!navigated)go('dashboard');}}).catch(()=>{});
 
 function postTitle(p){return p.title||p.text?.slice(0,85)||'โพสต์ที่ยังไม่มีข้อความ';}
 function sourceLabel(p){return p.sourceLabel||(p.provenance==='simulated'?'เคสจำลอง':p.provenance==='paraphrased'?'ข้อมูลถอดความ':'ข้อมูลจากไฟล์นำเข้า');}
 function statusLabel(p){return state.analyses[p.id]?'เปิดผล '+(state.analyses[p.id].mode==='ai'?'AI':'Demo')+' แล้ว':p.fileName?'นำเข้าสำเร็จ · ยังไม่ได้วิเคราะห์':p.inputKind==='manual'?'รับข้อมูลแล้ว · ยังไม่ได้วิเคราะห์':'ยังไม่ได้วิเคราะห์';}
 function coverageText(p){if(!p.comments?.length)return p.commentSummary?'จากคอมเมนต์ที่เก็บได้ · มีเพียงสรุปคอมเมนต์ (ข้อมูลถอดความ) · '+(p.coverage==='partial'?'เก็บมาได้บางส่วน':p.coverage==='complete'?'ไฟล์ระบุว่าครบ แต่ไม่มีข้อความรายรายการให้ตรวจ':'ไม่ทราบว่าเก็บครบหรือไม่'):'ไม่มีข้อความคอมเมนต์ที่นำมาตรวจได้';return p.coverage==='complete'?'ไฟล์ระบุว่าเก็บคอมเมนต์ครบ · เว็บไม่ได้ตรวจเทียบ Facebook':p.coverage==='partial'?`จากคอมเมนต์ที่เก็บได้ ${p.comments.length} ข้อความ · เก็บมาได้บางส่วน`:`จากคอมเมนต์ที่เก็บได้ ${p.comments.length} ข้อความ · ไม่ทราบว่าเก็บครบหรือไม่`;}
-function go(view){state.view=view;if(view==='feed')state.reading=false;document.querySelectorAll('[data-view]').forEach(b=>{if(b.dataset.view===view)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});const tools=document.querySelector('.data-tools');if(tools)tools.open=false;render();}
-function render(){if(state.view==='guides')guideUI.showPage();else if(state.view==='intent')intentUI.showPage();else if(state.view==='home')experience.showHome();else if(state.view==='care')experience.showCare();else if(state.view==='feed')renderFeedPage();else if(state.view==='import')renderImport();else renderOverview();document.body.dataset.page=state.view;}
+function go(view){navigated=true;state.view=view;if(view==='feed')state.reading=false;document.querySelectorAll('[data-view]').forEach(b=>{if(b.dataset.view===view)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});const tools=document.querySelector('.data-tools');if(tools)tools.open=false;render();}
+function render(){workflowUI?.stop();if(state.view==='dashboard')workflowUI.showDashboard();else if(state.view==='inbox')workflowUI.showInbox();else if(state.view==='settings')workflowUI.showSettings();else if(state.view==='guides')guideUI.showPage();else if(state.view==='intent')intentUI.showPage();else if(state.view==='home')experience.showHome();else if(state.view==='care')experience.showCare();else if(state.view==='feed')renderFeedPage();else if(state.view==='import')renderImport();else renderOverview();document.body.dataset.page=state.view;}
 function renderFeedPage(){
   $('workspace').innerHTML=`<div class="post-workspace"><section class="post-browser" id="post-browser" aria-label="เลือกโพสต์"><div class="browser-heading"><div><h1>เลือกโพสต์ที่อยากอ่าน</h1><p>ปรึกษาเรื่องแมว by ปอน</p></div><div class="browser-actions"><button class="text-button" data-action="load-public">เปิดชุด 200 โพสต์</button><button class="secondary" data-action="import-view">นำเข้า Excel</button></div></div><div class="browser-toolbar"><div class="searchbox"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="ค้นหาเรื่องที่สนใจ" aria-label="ค้นหาโพสต์" value="${esc(state.query)}"></div><div class="filter" id="filters"></div></div><div class="browser-count"><span id="feed-count"></span><button class="text-button" data-action="reset-filters" id="reset-filters" hidden>ล้างตัวกรอง</button></div><div class="feed-list" id="feed"></div><nav class="feed-pagination" id="feed-pagination" aria-label="หน้าของรายการโพสต์"></nav></section><section class="post-reader" id="post-reader" hidden><div class="reader-toolbar"><button class="back-to-posts" data-action="back-posts">กลับไปเลือกโพสต์</button><span id="reader-position"></span></div><article class="pane detail" id="detail" aria-label="รายละเอียดโพสต์"></article></section></div>`;
   renderList();if(state.reading)showReader();
@@ -224,4 +227,11 @@ intentUI=createIntentUI({workspace:$('workspace'),isActive:()=>state.view==='int
   state.active=post.id;experience.openCare(post.id,INTENTS[intent].tab);
 }});
 guideUI=createGuideUI({workspace:$('workspace')});
+workflowUI=createWorkflowUI({workspace:$('workspace'),isActive:()=>['dashboard','inbox','settings'].includes(state.view),currentView:()=>state.view,go,notify,prepareQuestion:post=>{
+  const id='workflow-'+post.id;
+  let target=state.posts.find(p=>p.id===id);
+  if(!target){target={id,postId:post.externalId,text:post.text,title:post.text.slice(0,65),url:post.url,category:(post.topics.topics||[]).map(t=>t.label).join(' / '),provenance:'imported',inputKind:'manual',sourceLabel:'โพสต์จาก Inbox',readingMode:'post-only',comments:[],commentSummary:'',coverage:'unknown',missing:[]};state.posts.unshift(target);}else target.text=post.text;
+  state.active=id;openHandoff();
+}});
 go(state.view);
+navigated=false;

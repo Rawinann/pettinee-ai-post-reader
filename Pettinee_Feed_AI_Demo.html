@@ -4,20 +4,21 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#245744">
-  <meta name="description" content="Pettinee พื้นที่อ่านโพสต์และคอมเมนต์เรื่องแมว พร้อมทางเลือกสำหรับคำถามถัดไป">
-  <title>Pettinee · อ่านให้เข้าใจ แล้วค่อยไปต่อ</title>
+  <meta name="description" content="แอพคุณหมอใจดี โดย Pettinee ช่วยอ่านโพสต์ จับคู่คู่มือ MeongSilJang และตรวจคำตอบก่อนส่ง">
+  <title>แอพคุณหมอใจดี · โดย Pettinee</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='12' fill='%23245744'/%3E%3Ctext x='11' y='29' fill='white' font-size='29' font-family='sans-serif'%3Ep%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/workflow.css">
   <script type="module" src="/app.mjs"></script>
 </head>
 <body>
   <a class="skip" href="#workspace">ข้ามไปเนื้อหา</a>
   <header class="topbar">
-    <a class="brand" href="/" aria-label="Pettinee หน้าหลัก">pettinee<span>.</span></a>
+    <a class="brand wf-brand" href="/" aria-label="แอพคุณหมอใจดี หน้าหลัก"><strong>แอพคุณหมอใจดี</strong><small>โดย Pettinee</small></a>
     <nav aria-label="เมนูหลัก" id="main-nav">
-      <button data-view="feed" aria-current="page">โพสต์</button><button data-view="guides">คู่มือ</button>
-      <button data-view="care">เรื่องของฉัน</button>
-      <details class="data-tools"><summary>เพิ่มเติม</summary><div><button data-view="home">เริ่มเรื่องใหม่ / ตัวอย่าง</button><button data-view="intent">AI จำแนกโพสต์</button><button data-view="import">นำเข้า Excel</button><button data-view="overview">ภาพรวมข้อมูล</button></div></details>
+      <button data-view="dashboard">ภาพรวม</button><button data-view="inbox">Inbox</button><button data-view="guides">จับคู่คู่มือ</button>
+      <button data-view="feed" aria-current="page">อ่านโพสต์</button>
+      <details class="data-tools"><summary>เพิ่มเติม</summary><div><button data-view="settings">การตั้งค่า</button><button data-view="care">เรื่องของฉัน</button><button data-view="home">เริ่มเรื่องใหม่ / ตัวอย่าง</button><button data-view="intent">AI จำแนกโพสต์</button><button data-view="import">นำเข้า Excel</button><button data-view="overview">ภาพรวมข้อมูล</button></div></details>
     </nav>
     <span class="mode">Demo</span>
   </header>
