@@ -6,9 +6,12 @@ const digest=text=>createHash('sha256').update(text.normalize('NFC').replace(/\s
 export function createCollectorOutbox(path,{clock=Date.now}={}){
  if(path!==':memory:')mkdirSync(dirname(path),{recursive:true});
  const db=new DatabaseSync(path);db.exec(`PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;
- CREATE TABLE IF NOT EXISTS collector_posts(id TEXT PRIMARY KEY,hash TEXT NOT NULL,event_json TEXT NOT NULL,state TEXT NOT NULL DEFAULT 'pending',attempts INTEGER NOT NULL DEFAULT 0,next_at INTEGER NOT NULL DEFAULT 0,workflow_id TEXT NOT NULL DEFAULT '',last_error TEXT NOT NULL DEFAULT '',first_seen TEXT NOT NULL,last_seen TEXT NOT NULL,changed_json TEXT NOT NULL DEFAULT '');`);
+ CREATE TABLE IF NOT EXISTS collector_posts(id TEXT PRIMARY KEY,hash TEXT NOT NULL,event_json TEXT NOT NULL,state TEXT NOT NULL DEFAULT 'pending',attempts INTEGER NOT NULL DEFAULT 0,next_at INTEGER NOT NULL DEFAULT 0,workflow_id TEXT NOT NULL DEFAULT '',last_error TEXT NOT NULL DEFAULT '',first_seen TEXT NOT NULL,last_seen TEXT NOT NULL,changed_json TEXT NOT NULL DEFAULT '');
+ CREATE TABLE IF NOT EXISTS collector_batch_baselines(group_id TEXT PRIMARY KEY,ids_json TEXT NOT NULL,created_at TEXT NOT NULL);`);
  const now=()=>new Date(clock()).toISOString();
  return {
+  batchBaseline(groupId){const prior=db.prepare('SELECT ids_json FROM collector_batch_baselines WHERE group_id=?').get(groupId);if(prior)return JSON.parse(prior.ids_json);const ids=db.prepare('SELECT id FROM collector_posts WHERE id LIKE ?').all(groupId+':%').map(r=>r.id);db.prepare('INSERT INTO collector_batch_baselines VALUES(?,?,?)').run(groupId,JSON.stringify(ids),now());return ids;},
+  finishBatchBaseline(groupId){db.prepare('DELETE FROM collector_batch_baselines WHERE group_id=?').run(groupId);},
   capture(posts){const counts={new:0,seen:0,changed:0};db.exec('BEGIN IMMEDIATE');try{for(const post of posts){const hash=digest(post.text),prior=db.prepare('SELECT * FROM collector_posts WHERE id=?').get(post.externalId),event={...post,eventId:'browser:'+post.externalId+':'+hash,sourceMeta:{...post.sourceMeta,observedAt:now()}};
    if(!prior){db.prepare('INSERT INTO collector_posts(id,hash,event_json,first_seen,last_seen) VALUES(?,?,?,?,?)').run(post.externalId,hash,JSON.stringify(event),now(),now());counts.new++;}
    else if(prior.hash===hash){db.prepare('UPDATE collector_posts SET last_seen=? WHERE id=?').run(now(),post.externalId);counts.seen++;}

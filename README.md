@@ -1,5 +1,7 @@
 # แอพคุณหมอใจดี — โดย Pettinee
 
+**Batch รายวัน:** `npm.cmd run automate:batch` หรือ `Run-Pettinee-Batch.cmd` อ่านครั้งละ 40 โพสต์ ถ้ายังไม่ถึงช่วงข้อมูลเดิมจะอ่านชุดถัดไปต่อเอง ไม่ย้อนอ่านชุดแรก เมื่อถึงเกณฑ์จะบันทึกรายงานและปิด Chrome ข้อมูลเก็บใน SQLite เดิม ดู [วิธีใช้ Batch และขีดจำกัด](docs/BROWSER-COLLECTOR.md) ยังไม่ได้ตั้ง scheduled task หรือเวลาเรียกงานให้อัตโนมัติ
+
 **ตัวอ่านโพสต์อัตโนมัติบนเครื่อง:** รัน `npm.cmd run automate` หรือดับเบิลคลิก `Start-Pettinee-Automation.cmd` เปิด Chrome โปรไฟล์ worker แยกสำหรับกลุ่มที่ระบุ ผู้ใช้ล็อกอินเองเมื่อจำเป็น แล้ว worker อ่านข้อความ/ลิงก์จากหน้าเข้า SQLite และ ML เดิม Inbox อยู่ที่ <http://127.0.0.1:4187> มี outbox กันซ้ำ/restart, refresh 60 วินาที และสถานะรอล็อกอิน/element ไม่ตรง ไม่มีการส่งคอมเมนต์หรืออัปโหลดโพสต์ใหม่ขึ้นเว็บไซต์สาธารณะ อ่าน [วิธีใช้และขอบเขต Browser worker](docs/BROWSER-COLLECTOR.md)
 
 เพิ่ม workflow ผู้ดูแลในโปรเจกต์เดิมตาม VPC กลุ่ม Mass: รับ event/นำเข้าโพสต์ → SQLite queue → Intent ML เดิม → Topic rules แยกส่วน → MiniLM จับคู่คู่มือเดิม → ร่างคำตอบสั้น → แก้ไขและอนุมัติ → คัดลอกหรือส่งผ่าน Page ที่มีสิทธิ์ มี Dashboard / Inbox / Settings และ Mock ที่วิ่งผ่าน pipeline จริง

@@ -5,20 +5,22 @@ export function createBrowserReader(page,config){
  return {
   gate:()=>page.evaluate(sourcePageState,{groupId:config.groupId}),
   order:()=>feedOrder,
+  async beginBatch(){await page.evaluate(()=>window.scrollTo(0,0));},
+  async readBatchView({excludeIds=[],limit=config.maxPosts}={}){await this.expand();return page.evaluate(extractVisiblePosts,{...args,excludeIds,limit});},
+  async scrollBatch(){await page.evaluate(()=>window.scrollBy(0,Math.round(window.innerHeight*.8)));await page.waitForTimeout(1500);},
   async preferNewPosts(){
+   feedOrder='unverified';
    const sorter=page.getByRole('button',{name:/เรียงลำดับฟีดในกลุ่มตาม|Sort group feed by/i}).first();
-   if(!await sorter.count())return false;
-   if(/โพสต์ใหม่|New posts/i.test(await sorter.innerText())){feedOrder='new_posts';return true;}
    try{
+    await sorter.waitFor({state:'visible',timeout:10000});
+    if(/โพสต์ใหม่|New posts/i.test(await sorter.innerText())){feedOrder='new_posts';return true;}
     await sorter.click({timeout:5000});
-    const option=page.getByRole('menuitem').filter({hasText:/^(โพสต์ใหม่|New posts)$/i}).first();
-    const fallback=page.getByText(/^(โพสต์ใหม่|New posts)$/i).first();
-    if(await option.count())await option.click({timeout:5000});
-    else if(await fallback.count())await fallback.click({timeout:5000});
-    else {await page.keyboard.press('Escape');return false;}
+    const option=page.getByText(/^(โพสต์ใหม่(?:ล่าสุด)?|New posts)$/i).first();
+    await option.waitFor({state:'visible',timeout:5000});
+    await option.click({timeout:5000});
     await sorter.filter({hasText:/โพสต์ใหม่|New posts/i}).waitFor({state:'visible',timeout:5000});
     feedOrder='new_posts';return true;
-   }catch{return false;}
+   }catch{await page.keyboard.press('Escape').catch(()=>{});return false;}
   },
   async expand(){
    // Only a post-body's See more control; never comments/replies/composers.

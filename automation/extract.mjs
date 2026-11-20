@@ -1,6 +1,6 @@
 // This function is serializable into the page. Read rendered post bodies only:
 // no network interception, hidden application state, cookies, authors or comments.
-export function extractVisiblePosts({groupId,messageSelector='',limit=40},suppliedDocument){
+export function extractVisiblePosts({groupId,messageSelector='',limit=40,excludeIds=[]},suppliedDocument){
  const doc=suppliedDocument||document;
  const articleSelector='[role="article"],article';
  const own=(node,article)=>node.closest(articleSelector)===article;
@@ -17,11 +17,13 @@ export function extractVisiblePosts({groupId,messageSelector='',limit=40},suppli
  };
  const result={posts:[],articles:0,skipped:{noPermalink:0,noMessage:0,oversized:0},selectorError:false};
  const found=new Set();
- for(const article of doc.querySelectorAll(articleSelector)){
+ const excluded=new Set(excludeIds),scope=doc.querySelector('[role="feed"]')||doc;
+ for(const article of scope.querySelectorAll(articleSelector)){
   if(article.parentElement?.closest(articleSelector))continue; // nested comments
   result.articles++;
   const target=Array.from(article.querySelectorAll('a[href]')).filter(a=>own(a,article)).map(a=>canonical(a.getAttribute('href'))).find(Boolean);
   if(!target){result.skipped.noPermalink++;continue;}
+  if(excluded.has(groupId+':'+target.postId))continue;
   if(found.has(target.postId))continue;
   const selectors=messageSelector?[messageSelector]:['[data-ad-preview="message"]','[data-ad-comet-preview="message"]','[data-ad-rendering-role="story_message"]'];
   let nodes=[];

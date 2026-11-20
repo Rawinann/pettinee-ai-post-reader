@@ -8,28 +8,55 @@ import {collectorConfig} from './config.mjs';
 import {createBrowserReader} from './browser.mjs';
 import {createCollectorOutbox,deliverPending} from './outbox.mjs';
 import {runBrowserCycle,isNavigationTransition} from './navigation.mjs';
+import {collectInBatches} from './batch.mjs';
+import {persistBatchReport} from './batch-report.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
-const config=collectorConfig(root),loginOnly=process.argv.includes('--login');
+const config=collectorConfig(root),loginOnly=process.argv.includes('--login'),batchMode=process.argv.includes('--batch');
+if(loginOnly&&batchMode)throw Error('เลือกโหมด login หรือ batch อย่างใดอย่างหนึ่ง');
 const messages={starting:'กำลังเปิด Chrome สำหรับตัวอ่านโพสต์',needs_login:'กรุณาล็อกอินด้วยตัวเองใน Chrome ของ worker',blocked:'พบหน้า checkpoint/challenge กรุณาตรวจด้วยตัวเอง ระบบหยุดรีเฟรช',wrong_page:'แท็บ worker ไม่ได้อยู่ในกลุ่มที่ตั้งค่า หยุดอ่านจนกว่าจะกลับหน้ากลุ่ม',waiting_feed:'กำลังรอรายการโพสต์โหลด หากต้องล็อกอินให้ทำด้วยตัวเอง',no_posts:'ยังอ่านข้อความโพสต์พร้อมลิงก์ไม่ได้ ตรวจหน้าและ selector',selector_changed:'รูปแบบ element ไม่ตรง ต้องตรวจ selector',running:'กำลังอ่านโพสต์ที่หน้าโหลดมา ไม่รับรองว่าเก็บครบทั้งกลุ่ม',error:'ตัวอ่านพบข้อผิดพลาด กรุณาตรวจ Chrome และเริ่มใหม่',stopped:'ตัวอ่านหยุดแล้ว'};
-let context,server,outbox,closing=false,closed=false,currentState='starting',lastScanAt=null,lastCaptureAt=null,feedOrder='unverified',lastRefresh=0,changePending=true,lastScan=0;
-const update=async(state=currentState)=>{currentState=state;const value={version:1,groupId:config.groupId,state,updatedAt:new Date().toISOString(),lastScanAt,lastCaptureAt,feedOrder,counts:outbox?.stats()||{},message:messages[state]};await mkdir(dirname(config.statusPath),{recursive:true});const temp=config.statusPath+'.tmp';await writeFile(temp,JSON.stringify(value));await rename(temp,config.statusPath);};
+let context,server,outbox,closing=false,closed=false,cancelledByUser=false,currentState='starting',lastScanAt=null,lastCaptureAt=null,feedOrder='unverified',lastRefresh=0,changePending=true,lastScan=0,batchReport=null;
+const update=async(state=currentState)=>{currentState=state;const batch=batchReport?{runId:batchReport.runId,rounds:batchReport.rounds.length,read:batchReport.read,new:batchReport.new,seen:batchReport.seen,changed:batchReport.changed,delivered:batchReport.delivered,reason:batchReport.reason,phase:batchReport.phase||'collecting',message:batchReport.message,analysisRemaining:batchReport.analysisRemaining||0}:null;const value={version:1,groupId:config.groupId,mode:batchMode?'batch':'watch',state,updatedAt:new Date().toISOString(),lastScanAt,lastCaptureAt,feedOrder,counts:outbox?.stats()||{},message:batchReport?.message||messages[state],batch};await mkdir(dirname(config.statusPath),{recursive:true});const temp=config.statusPath+'.tmp';await writeFile(temp,JSON.stringify(value));await rename(temp,config.statusPath);};
 let statusWork=Promise.resolve();
 const status=state=>{statusWork=statusWork.then(()=>update(state)).catch(()=>{console.error('บันทึกสถานะ worker ไม่สำเร็จ');});return statusWork;};
-async function shutdown(){if(closing)return;closing=true;closed=true;if(!loginOnly)await status(currentState==='error'?'error':'stopped');if(context)await context.close().catch(()=>{});if(server){await server.workflow.close();await new Promise(r=>server.close(r));}outbox?.close();}
-for(const signal of ['SIGINT','SIGTERM'])process.once(signal,()=>{closed=true;});
+async function shutdown(){if(closing)return;closing=true;closed=true;if(!loginOnly&&!batchMode)await status(currentState==='error'?'error':'stopped');if(context)await context.close().catch(()=>{});if(server){await server.workflow.close();await new Promise(r=>server.close(r));}outbox?.close();}
+for(const signal of ['SIGINT','SIGTERM'])process.once(signal,()=>{closed=true;cancelledByUser=true;});
+
+async function runBatch(reader){
+ const heartbeat=setInterval(()=>{status();},10000);heartbeat.unref?.();
+ try{
+  const deadline=Date.now()+config.batchLoginWaitMs;
+  while(!closed){let gate;await runBrowserCycle(async()=>{gate=await reader.gate();},{isClosed:()=>closed,onTransition:async()=>status('waiting_feed')});if(gate==='ready'||Date.now()>=deadline)break;if(gate)await status(gate);await delay(500);}
+  batchReport=await collectInBatches({reader,outbox,ingest:event=>server.workflow.ingest(event),groupId:config.groupId,batchSize:config.maxPosts,knownStreak:config.batchKnownStreak,maxRounds:config.batchMaxRounds,maxScrolls:config.batchMaxScrolls,maxDurationMs:config.batchMaxDurationMs,stallLimit:config.batchStallLimit,isCancelled:()=>closed,onProgress:async report=>{
+   batchReport=report;lastScanAt=new Date().toISOString();if(report.new)lastCaptureAt=lastScanAt;feedOrder=report.feedOrder;
+   await persistBatchReport(config.batchReportDir,report);await status(report.state==='running'?'running':'analysing');
+   console.log(JSON.stringify({batch:report.rounds.length,read:report.read,new:report.new,seen:report.seen,state:report.state,reason:report.reason}));
+  }});
+  // Collection is over; release Chrome before draining the durable ML queue.
+  if(context){await context.close().catch(()=>{});context=null;}
+  batchReport.phase='analysing';await status('analysing');
+  const analysisDeadline=Date.now()+config.batchAnalysisWaitMs;
+  const remaining=()=>server.workflow.store.stats().jobs.filter(j=>['pending','running'].includes(j.state)).reduce((sum,j)=>sum+j.count,0);
+  while(!cancelledByUser&&batchReport.state!=='cancelled'&&remaining()&&Date.now()<analysisDeadline){if(!await server.workflow.runOnce())await delay(200);}
+  batchReport.analysisRemaining=remaining();batchReport.collectionFinishedAt=batchReport.finishedAt;batchReport.finishedAt=new Date().toISOString();batchReport.phase='finished';
+  if(batchReport.analysisRemaining&&batchReport.state==='completed'){batchReport.state='incomplete';batchReport.message+=' · มีงานวิเคราะห์ที่บันทึกไว้ในคิว รอเปิด server ทำต่อ';}
+  const reportPath=await persistBatchReport(config.batchReportDir,batchReport);await status(batchReport.state);
+  console.log('จบ Batch: '+batchReport.message);console.log('รายงาน: '+reportPath);
+  if(batchReport.state!=='completed')process.exitCode=2;
+ }finally{clearInterval(heartbeat);}
+}
 
 try{
  await mkdir(config.profileDir,{recursive:true});
  if(!loginOnly){
   outbox=createCollectorOutbox(config.outboxPath);
-  server=createAppServer({workflowOptions:{dbPath:config.workflowPath,collectorStatusPath:config.statusPath,operatorToken:process.env.OPERATOR_TOKEN||'',ingestToken:process.env.INGEST_TOKEN||'',chatbotUrl:process.env.MEONGSILJANG_URL||'https://meongsiljang.com/th',televetUrl:process.env.TELEVET_URL||''}});
+  server=createAppServer({workflowOptions:{dbPath:config.workflowPath,collectorStatusPath:config.statusPath,autoRun:!batchMode,operatorToken:process.env.OPERATOR_TOKEN||'',ingestToken:process.env.INGEST_TOKEN||'',chatbotUrl:process.env.MEONGSILJANG_URL||'https://meongsiljang.com/th',televetUrl:process.env.TELEVET_URL||''}});
   await new Promise((done,reject)=>{server.once('error',reject);server.listen(config.appPort,'127.0.0.1',()=>{server.off('error',reject);done();});});
   console.log('Pettinee Inbox: http://127.0.0.1:'+config.appPort);
   console.log('อ่านเฉพาะข้อความโพสต์และลิงก์ที่หน้าเว็บโหลดมา ไม่มีการส่งคอมเมนต์');
   await status('starting');
  }
- context=await chromium.launchPersistentContext(config.profileDir,{channel:config.channel,headless:false,viewport:{width:1280,height:900},acceptDownloads:false});
+ context=await chromium.launchPersistentContext(config.profileDir,{channel:config.channel,headless:false,chromiumSandbox:true,viewport:{width:1280,height:900},acceptDownloads:false});
  context.setDefaultTimeout(10000);context.on('close',()=>{closed=true;});
  const page=context.pages()[0]||await context.newPage();
  console.log('เปิดกลุ่ม '+config.groupId+' ด้วยโปรไฟล์ worker แยกจาก Chrome ส่วนตัว');
@@ -47,6 +74,8 @@ try{
  if(loginOnly){
   console.log('โหมดเตรียมล็อกอิน: ยังไม่เก็บโพสต์ เมื่อล็อกอินและเปิดกลุ่มได้แล้ว ให้ปิดหน้าต่าง Chrome นี้');
   while(!closed)await delay(500);
+ }else if(batchMode){
+  await runBatch(createBrowserReader(page,config));
  }else{
   const reader=createBrowserReader(page,config);
   let lastHeartbeat=0,lastReported='';

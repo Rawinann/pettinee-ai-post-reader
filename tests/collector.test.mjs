@@ -67,3 +67,10 @@ test('a login navigation during DOM evaluation keeps the worker alive and allows
  assert.equal((await runBrowserCycle(async()=>{throw Error('Target closed');},{isClosed:()=>true})).kind,'closed');
  await assert.rejects(runBrowserCycle(async()=>{throw Error('Database corrupt');}),/Database corrupt/);
 });
+test('feed sorting waits for the lazy menu and confirms the changed label before reporting new-post order',async()=>{
+ let sortReady=false,menu=false,label='เกี่ยวข้องมากที่สุด',apply=true;
+ const sorter={waitFor:async()=>{sortReady=true;},innerText:async()=>label,click:async()=>{assert.equal(sortReady,true);menu=true;},filter:()=>({waitFor:async()=>{if(label!=='โพสต์ใหม่')throw Error('label unchanged');}})};
+ const page={getByRole:()=>({first:()=>sorter}),getByText:()=>({first:()=>({waitFor:async()=>assert.equal(menu,true),click:async()=>{if(apply)label='โพสต์ใหม่';}})}),keyboard:{press:async()=>{menu=false;}}};
+ const reader=createBrowserReader(page,{});assert.equal(await reader.preferNewPosts(),true);assert.equal(reader.order(),'new_posts');
+ label='เกี่ยวข้องมากที่สุด';apply=false;assert.equal(await reader.preferNewPosts(),false);assert.equal(reader.order(),'unverified');
+});
