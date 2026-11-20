@@ -162,6 +162,7 @@ function renderOverview(){
 }
 function openHandoff(question,additional='',channel='ai'){
   const p=state.posts.find(p=>p.id===state.active);if(!p)return;
+  if(destination)$('open-meong').href=destination;
   // Preparing an editable handoff is also available before analysis; it does not mark the post analyzed.
   const a=state.analyses[p.id]||analyzeDemo(p);validateAnalysis(a,p);
   const extra=additional||experience?.getHandoffContext(p.id)||'';
@@ -227,11 +228,11 @@ intentUI=createIntentUI({workspace:$('workspace'),isActive:()=>state.view==='int
   state.active=post.id;experience.openCare(post.id,INTENTS[intent].tab);
 }});
 guideUI=createGuideUI({workspace:$('workspace')});
-workflowUI=createWorkflowUI({workspace:$('workspace'),isActive:()=>['dashboard','inbox','settings'].includes(state.view),currentView:()=>state.view,go,notify,prepareQuestion:post=>{
+workflowUI=createWorkflowUI({workspace:$('workspace'),isActive:()=>['dashboard','inbox','settings'].includes(state.view),currentView:()=>state.view,go,notify,prepareQuestion:(post,chatbotUrl)=>{
   const id='workflow-'+post.id;
   let target=state.posts.find(p=>p.id===id);
   if(!target){target={id,postId:post.externalId,text:post.text,title:post.text.slice(0,65),url:post.url,category:(post.topics.topics||[]).map(t=>t.label).join(' / '),provenance:'imported',inputKind:'manual',sourceLabel:'โพสต์จาก Inbox',readingMode:'post-only',comments:[],commentSummary:'',coverage:'unknown',missing:[]};state.posts.unshift(target);}else target.text=post.text;
-  state.active=id;openHandoff();
+  state.active=id;openHandoff();const url=meongURL(chatbotUrl);if(url)$('open-meong').href=url;
 }});
 go(state.view);
 navigated=false;
