@@ -1,11 +1,12 @@
 import {readFile,access} from 'node:fs/promises';
-import {join} from 'node:path';
+import {join,dirname} from 'node:path';
 import {randomUUID} from 'node:crypto';
 import {createWorkflowStore,workflowError} from './workflow-store.mjs';
 import {createPageAdapter,validateSourceEvent,mockEvent,MOCK_SCENARIOS} from './source-adapters.mjs';
 import {classifyTopics,evaluateSafety,verifiedGuides,generateReply,checkReply} from '../lib/workflow-policy.mjs';
+import {readCollectorStatus} from './collector-status.mjs';
 export function integrationURL(value){try{const u=new URL(value);if(u.protocol!=='https:'||u.username||u.password)return '';u.search='';u.hash='';return u.href;}catch{return '';}}
-export function createWorkflowService({rootDir,dbPath,intent,guides,pageAdapter,meta={},autoRun=true,pollMs=500,clock=Date.now,storeOptions={},chatbotUrl='https://meongsiljang.com/th',televetUrl=''}={}){
+export function createWorkflowService({rootDir,dbPath,intent,guides,pageAdapter,meta={},autoRun=true,pollMs=500,clock=Date.now,storeOptions={},chatbotUrl='https://meongsiljang.com/th',televetUrl='',collectorStatusPath=join(dirname(dbPath),'collector-status.json')}={}){
  const store=createWorkflowStore(dbPath,{clock,...storeOptions}),owner=randomUUID(),page=pageAdapter||createPageAdapter(meta);
  let catalogPromise,work=null,timer=null,closing=null,stopped=false,mockTimer=null,mockRemaining=0;
  const catalog=()=>catalogPromise??=readFile(join(rootDir,'data/guides/catalog.json'),'utf8').then(JSON.parse).catch(e=>{catalogPromise=null;throw e;});
@@ -20,7 +21,7 @@ export function createWorkflowService({rootDir,dbPath,intent,guides,pageAdapter,
    const classified=await step('intent',()=>intent.classify({text:post.text}));
    const topics=await step('topic',()=>classifyTopics(post.text));
    const selected=await step('guide',async()=>{if(post.text.trim().length<4)return [];const found=await guides.search({text:post.text,species:'cat'});return verifiedGuides(found,await catalog());});
-   const safety=await step('safety',()=>evaluateSafety(post.text,{intent:classified,topics,guides:selected}));
+   const safety=await step('safety',()=>evaluateSafety(post.text,{intent:classified,topics,guides:selected,sourceMeta:post.sourceMeta}));
    const draft=await step('draft',()=>generateReply({text:post.text,topics,guides:selected,safety}));
    const errors=checkReply(draft,{guides:selected,safety});if(errors.length)throw workflowError('ร่างไม่ผ่านข้อกำหนด: '+errors.join(' · '),422);
    store.complete(job,{intent:classified,topics,guides:selected,safety,draft,processingMs:Math.round(performance.now()-started)});
@@ -31,10 +32,10 @@ export function createWorkflowService({rootDir,dbPath,intent,guides,pageAdapter,
  const kick=()=>{if(autoRun&&!stopped)runOnce().catch(()=>{});};
  const service={
   store,page,runOnce,
-  ingest(raw,options){const event=validateSourceEvent(raw,options);event.initialSafety=evaluateSafety(event.text);const result=store.ingest(event);kick();return result;},
+  ingest(raw,options){const event=validateSourceEvent(raw,options);event.initialSafety=evaluateSafety(event.text,{sourceMeta:event.sourceMeta});const result=store.ingest(event);kick();return result;},
   list:options=>store.list(options),
   detail(id){const post=get(id);return {...post,replyErrors:post.draft?checkReply(post.draft,post):[],history:store.history(id),canPublishPage:post.sourceType==='page'&&page.status().canPublish};},
-  async status(){const [guideStatus,intentStatus]=await Promise.all([guides.status(),intent.status()]);const encoderAvailable=await access(join(rootDir,'models/guide-encoder/onnx/model_quantized.onnx')).then(()=>true,()=>false);return {available:true,brand:'แอพคุณหมอใจดี',company:'Pettinee',persistence:'server-sqlite',...store.stats(),connections:{page:page.status(),group:page.groupStatus(),import:{available:true},mock:{available:true,running:!!mockTimer,remaining:mockRemaining}},guides:{...guideStatus,encoderAvailable,metadataOnly:true},intent:{ready:intentStatus.ready,trainingLabelStatus:intentStatus.trainingLabelStatus},approval:{required:true,autoReply:false,generator:'grounded_metadata_template',llmConnected:false},products:{chatbot:{mode:'external-link',url:integrationURL(chatbotUrl),apiConnected:false},televet:{mode:integrationURL(televetUrl)?'external-link':'not-configured',url:integrationURL(televetUrl),apiConnected:false,bookingConnected:false}},mockScenarios:MOCK_SCENARIOS};},
+  async status(){const [guideStatus,intentStatus]=await Promise.all([guides.status(),intent.status()]);const encoderAvailable=await access(join(rootDir,'models/guide-encoder/onnx/model_quantized.onnx')).then(()=>true,()=>false);return {available:true,brand:'แอพคุณหมอใจดี',company:'Pettinee',persistence:'server-sqlite',...store.stats(),connections:{collector:await readCollectorStatus(collectorStatusPath),page:page.status(),group:page.groupStatus(),import:{available:true},mock:{available:true,running:!!mockTimer,remaining:mockRemaining}},guides:{...guideStatus,encoderAvailable,metadataOnly:true},intent:{ready:intentStatus.ready,trainingLabelStatus:intentStatus.trainingLabelStatus},approval:{required:true,autoReply:false,generator:'grounded_metadata_template',llmConnected:false},products:{chatbot:{mode:'external-link',url:integrationURL(chatbotUrl),apiConnected:false},televet:{mode:integrationURL(televetUrl)?'external-link':'not-configured',url:integrationURL(televetUrl),apiConnected:false,bookingConnected:false}},mockScenarios:MOCK_SCENARIOS};},
   edit(id,{text,revision,actor='operator'}){if(typeof text!=='string'||!text.trim()||text.length>2400)throw workflowError('คำตอบต้องยาว 1–2,400 ตัวอักษร');return store.edit(id,text,revision,String(actor).slice(0,80));},
   approve(id,{revision,acknowledged,actor='operator'}){if(acknowledged!==true)throw workflowError('ต้องอ่านข้อความ คู่มือ และข้อควรตรวจ แล้วทำเครื่องหมายยืนยัน');checkedPost(id,revision);return store.approve(id,revision,String(actor).slice(0,80));},
   copy(id,{revision,actor='operator'}){checkedPost(id,revision);return {text:store.copy(id,revision,String(actor).slice(0,80)),published:false};},

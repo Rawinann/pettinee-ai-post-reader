@@ -20,6 +20,8 @@
 
 Core workflow ทำงานจริงบน Node/SQLite โดยไม่ใช้ API key: event → dedup → intent → topic → guide → safety → draft → human approval → copy/ผู้ดูแลยืนยันตอบเอง ประวัติและคิวอยู่ฝั่ง server ข้ามการรีสตาร์ตได้ Mock เป็น **ข้อมูลจำลอง** แต่ใช้ pipeline/โมเดล/ฐานข้อมูลจริง
 
+เพิ่ม Browser worker ต้นแบบตามคำขอภายหลัง: อ่านข้อความโพสต์ที่ Chrome โหลดมาเข้า workflow เดิมด้วย `npm.cmd run automate` มี outbox/receipt และ provenance ว่าข้อความอาจไม่ครบ ใช้ Chrome โปรไฟล์แยก ต้องให้ผู้ใช้ล็อกอิน/ยืนยันตัวตนเอง ไม่ใช่การเชื่อม Groups API และไม่ใช่หลักฐานว่าได้รับอนุญาตเก็บหรือเผยแพร่ต่อ ดู [BROWSER-COLLECTOR.md](docs/BROWSER-COLLECTOR.md) ผลทดสอบเป็น DOM จำลองและ ML จริง การดึงจากกลุ่มจริงต้องยืนยัน receipt หลังผ่านขั้นยืนยันตัวตนก่อน
+
 Page API เป็น adapter ที่มี signature, token และ approval gate ทดสอบด้วย transport จำลอง ยังไม่ได้เชื่อม Page ของผู้ใช้จริงเพราะไม่มี credentials/permissions ส่วน Group ภายนอกแสดงรอช่องทางที่รองรับ ไม่มี scraping หรือ Groups API เดิม
 
 เว็บสาธารณะเดิมเป็น static site: อ่านโพสต์/Excel/Intent/คู่มือยังใช้ได้ แต่ Inbox ฝั่ง server ต้องเปิด Node backend ก่อน ไม่มีการใช้ localStorage แทนฐานข้อมูลแล้วอ้างว่าทนต่อ server restart

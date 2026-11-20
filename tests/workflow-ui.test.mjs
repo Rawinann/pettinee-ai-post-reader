@@ -42,7 +42,7 @@ test('Dashboard -> real mock ingestion -> Inbox -> edit -> approval -> clipboard
  assert.equal(b.document.querySelector('#wf-approve').disabled,true);b.click('[data-wf-action="save"]');await waitFor(()=>b.server.workflow.list().posts[0].revision===2,'saved edit');await waitFor(()=>b.document.querySelector('#wf-approve')?.disabled===false,'refreshed draft');
  b.document.querySelector('#wf-ack').checked=true;b.click('[data-wf-action="approve"]');await waitFor(()=>b.document.querySelector('[data-wf-action="copy"]')?.disabled===false,'approved state').catch(e=>assert.fail(e.message+' '+b.document.getElementById('wf-message').textContent+' / '+JSON.stringify(b.server.workflow.list().posts[0])));
  b.click('[data-wf-action="copy"]');await waitFor(()=>b.writes.length===1,'clipboard');assert.match(b.writes[0],/ขอบคุณที่เล่าให้ฟัง/);assert.equal(b.server.workflow.list().posts[0].status,'approved');
- b.click('[data-wf-action="handoff"]');assert.equal(b.handoffs.length,1);b.click('[data-wf-action="manual"]');await waitFor(()=>b.server.workflow.list({status:'done'}).total===1,'operator confirmed manual reply');
+ b.click('[data-wf-action="handoff"]');assert.equal(b.handoffs.length,1);b.click('[data-wf-action="manual"]');await waitFor(()=>b.server.workflow.list({status:'done'}).total===1,'operator confirmed manual reply');await waitFor(()=>b.document.querySelector('#wf-detail .pill')?.textContent==='ตอบแล้ว','publication displayed in Inbox');
  assert.ok(b.server.workflow.detail(b.server.workflow.list().posts[0].id).history.some(h=>h.kind==='draft-edited'));
 });
 test('Inbox receives JSON and existing Excel parser, merges rows and reports duplicates; source HTML stays literal',async t=>{

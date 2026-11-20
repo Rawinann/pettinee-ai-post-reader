@@ -12,7 +12,9 @@ export function validateSourceEvent(raw,{trustedPage=false}={}){
  if(url){try{const parsed=new URL(url);if(parsed.protocol!=='https:'||parsed.username||parsed.password)throw Error();parsed.hash='';url=parsed.href;}catch{throw workflowError('ลิงก์ต้นทางต้องเป็น HTTPS และไม่มีข้อมูลล็อกอิน');}}
  if(!message&&!url&&!externalId)throw workflowError('ต้องมีข้อความ ลิงก์ หรือรหัสโพสต์อย่างน้อยหนึ่งอย่าง');
  let publishedAt=text(raw.publishedAt,'เวลาโพสต์',60);if(publishedAt){if(Number.isNaN(Date.parse(publishedAt)))throw workflowError('เวลาโพสต์ไม่ถูกต้อง');publishedAt=new Date(publishedAt).toISOString();}
- return {sourceType,externalId,eventId,url,text:message,publishedAt,authorization:sourceType==='mock'?'fictional-test':trustedPage?'verified-meta-page-webhook':'operator-confirmed'};
+ let sourceMeta={};
+ if(raw.sourceMeta!==undefined){const m=raw.sourceMeta;if(!m||typeof m!=='object'||Array.isArray(m)||m.method!=='browser-dom'||sourceType!=='group'||!/^\d+$/.test(m.groupId)||!['partial','unknown'].includes(m.completeness)||!Number.isFinite(Date.parse(m.observedAt)))throw workflowError('ข้อมูลที่มาจาก browser collector ไม่ถูกต้อง');sourceMeta={method:'browser-dom',groupId:m.groupId,completeness:m.completeness,observedAt:new Date(m.observedAt).toISOString()};}
+ return {sourceType,externalId,eventId,url,text:message,publishedAt,...(Object.keys(sourceMeta).length?{sourceMeta}:{}),authorization:sourceType==='mock'?'fictional-test':trustedPage?'verified-meta-page-webhook':'operator-confirmed'};
 }
 export const MOCK_SCENARIOS=Object.freeze([
  {id:'neuter',label:'แผลบวมหลังทำหมัน',text:'หลังทำหมันวันที่ 5–6 แผลยังดูบวม จึงถามว่าปกติหรือไม่'},

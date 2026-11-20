@@ -4,7 +4,7 @@ import {dirname} from 'node:path';
 import {randomUUID,createHash} from 'node:crypto';
 export const workflowError=(message,statusCode=400)=>Object.assign(Error(message),{statusCode});
 const hash=value=>createHash('sha256').update(value).digest('hex');
-const decode=row=>row?{id:row.id,sourceType:row.source_type,externalId:row.external_id,url:row.source_url,text:row.text,publishedAt:row.published_at,receivedAt:row.received_at,status:row.status,stage:row.stage,intent:JSON.parse(row.intent_json),topics:JSON.parse(row.topics_json),guides:JSON.parse(row.guides_json),safety:JSON.parse(row.safety_json),draft:row.draft,revision:row.revision,approvedRevision:row.approved_revision,lastError:row.last_error,processingMs:row.processing_ms,updatedAt:row.updated_at}:null;
+const decode=row=>row?{id:row.id,sourceType:row.source_type,externalId:row.external_id,url:row.source_url,text:row.text,publishedAt:row.published_at,receivedAt:row.received_at,status:row.status,stage:row.stage,intent:JSON.parse(row.intent_json),topics:JSON.parse(row.topics_json),guides:JSON.parse(row.guides_json),safety:JSON.parse(row.safety_json),sourceMeta:JSON.parse(row.source_meta_json||'{}'),draft:row.draft,revision:row.revision,approvedRevision:row.approved_revision,lastError:row.last_error,processingMs:row.processing_ms,updatedAt:row.updated_at}:null;
 export function createWorkflowStore(path,{clock=Date.now,maxAttempts=3,leaseMs=120000,retryBaseMs=1000}={}){
  if(path!==':memory:')mkdirSync(dirname(path),{recursive:true});
  const db=new DatabaseSync(path);db.exec('PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000;');
@@ -16,6 +16,7 @@ export function createWorkflowStore(path,{clock=Date.now,maxAttempts=3,leaseMs=1
  CREATE TABLE IF NOT EXISTS workflow_publications(post_id TEXT PRIMARY KEY REFERENCES workflow_posts(id),state TEXT NOT NULL,revision INTEGER NOT NULL,external_id TEXT NOT NULL DEFAULT '',method TEXT NOT NULL,updated_at TEXT NOT NULL);
  CREATE INDEX IF NOT EXISTS workflow_jobs_ready ON workflow_jobs(state,next_at);
  CREATE INDEX IF NOT EXISTS workflow_posts_status ON workflow_posts(status,received_at);`);
+ if(!db.prepare('PRAGMA table_info(workflow_posts)').all().some(c=>c.name==='source_meta_json'))db.exec("ALTER TABLE workflow_posts ADD COLUMN source_meta_json TEXT NOT NULL DEFAULT '{}'");
  const now=()=>new Date(clock()).toISOString();
  const transaction=fn=>{db.exec('BEGIN IMMEDIATE');try{const result=fn();db.exec('COMMIT');return result;}catch(e){db.exec('ROLLBACK');throw e;}};
  const audit=(id,kind,data={},actor='system')=>db.prepare('INSERT INTO workflow_audit(post_id,kind,actor,data_json,created_at) VALUES(?,?,?,?,?)').run(id,kind,actor,JSON.stringify(data),now());
@@ -35,7 +36,7 @@ export function createWorkflowStore(path,{clock=Date.now,maxAttempts=3,leaseMs=1
    const prior=db.prepare('SELECT * FROM workflow_posts WHERE source_type=? AND source_key=?').get(event.sourceType,sourceKey);
    if(prior&&prior.text!==event.text&&!(event.sourceType==='page'&&!event.text))throw workflowError('รหัสโพสต์เดิมมีข้อความเปลี่ยน ต้องตรวจสอบก่อนรับเวอร์ชันใหม่',409);
    const id=prior?.id||randomUUID();
-   if(!prior){db.prepare('INSERT INTO workflow_posts(id,source_type,source_key,external_id,source_url,text,published_at,received_at,status,updated_at,safety_json) VALUES(?,?,?,?,?,?,?,?,?,?,?)').run(id,event.sourceType,sourceKey,event.externalId,event.url,event.text,event.publishedAt,now(),'queued',now(),JSON.stringify(event.initialSafety||{}));db.prepare('INSERT INTO workflow_jobs(post_id,state,next_at) VALUES(?,?,?)').run(id,'pending',clock());audit(id,'received',{sourceType:event.sourceType,authorization:event.authorization||'operator-confirmed'});}
+   if(!prior){db.prepare('INSERT INTO workflow_posts(id,source_type,source_key,external_id,source_url,text,published_at,received_at,status,updated_at,safety_json,source_meta_json) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)').run(id,event.sourceType,sourceKey,event.externalId,event.url,event.text,event.publishedAt,now(),'queued',now(),JSON.stringify(event.initialSafety||{}),JSON.stringify(event.sourceMeta||{}));db.prepare('INSERT INTO workflow_jobs(post_id,state,next_at) VALUES(?,?,?)').run(id,'pending',clock());audit(id,'received',{sourceType:event.sourceType,authorization:event.authorization||'operator-confirmed',method:event.sourceMeta?.method||'import'});}
    db.prepare('INSERT INTO workflow_events VALUES(?,?,?,?,?)').run(event.sourceType,eventKey,fingerprint,id,now());
    return {post:required(id),duplicate:!!prior};
   });},
