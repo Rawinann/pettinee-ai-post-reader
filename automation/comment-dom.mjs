@@ -15,13 +15,17 @@ export function inspectReplyPage({groupId,postId,sourceText},suppliedDocument){
  if(/\/login/.test(u.pathname)||Array.from(doc.querySelectorAll('input[type="password"],#login_form')).some(visible))return {state:'needs_login'};
  const match=u.pathname.match(/^\/groups\/(\d+)\/(?:posts|permalink)\/([A-Za-z0-9_-]+)\/?$/);
  if(!['www.facebook.com','web.facebook.com','facebook.com'].includes(u.hostname)||!match||match[1]!==groupId||match[2]!==postId)return {state:'wrong_post'};
+ const dialogs=Array.from(doc.querySelectorAll('[role="dialog"]')).filter(el=>visible(el)&&el.querySelector('[role="article"],article'));
+ const scope=dialogs.at(-1)||doc.querySelector('main,[role="main"]');
+ if(!scope)return {state:'waiting_page'};
+ const sourcePrefix=normal(sourceText).slice(0,80);
+ if(!sourcePrefix||!normal(scope.innerText??scope.textContent).includes(sourcePrefix))return {state:'source_changed'};
  const label=el=>normal(el.getAttribute('aria-label')||el.getAttribute('placeholder')||(el.getAttribute('aria-labelledby')||'').split(/\s+/).map(id=>doc.getElementById(id)?.textContent||'').join(' '));
- const editors=Array.from(doc.querySelectorAll('[role="textbox"][contenteditable="true"],textarea[aria-label]')).filter(el=>visible(el)&&/^(แสดงความคิดเห็นในชื่อ|Comment as)\s+.+/iu.test(label(el)));
+ const editors=Array.from(scope.querySelectorAll('[role="textbox"][contenteditable="true"],textarea[aria-label]')).filter(el=>visible(el)&&(/^(แสดงความคิดเห็นในชื่อ|Comment as)\s+.+/iu.test(label(el))||/^(เขียนความคิดเห็นที่แสดงต่อสาธารณะ|Write a public comment)/iu.test(label(el))));
  if(editors.length!==1)return {state:'composer_unavailable',composerCount:editors.length};
  const editor=editors[0],editorLabel=label(editor),account=editorLabel.replace(/^(แสดงความคิดเห็นในชื่อ|Comment as)\s+/iu,'').trim();
- const scope=doc.querySelector('main,[role="main"]');
- const sourcePrefix=normal(sourceText).slice(0,80),sourceMatched=!!sourcePrefix&&!!scope&&normal(scope.innerText??scope.textContent).includes(sourcePrefix);
- return {state:sourceMatched?'ready':'source_changed',account,editorLabel,existingDraft:normal(editor.value??editor.innerText??editor.textContent).length>0};
+ if(account===editorLabel)return {state:'account_unavailable',editorLabel};
+ return {state:'ready',account,editorLabel,existingDraft:normal(editor.value??editor.innerText??editor.textContent).length>0};
 }
 
 export function visibleCommentReceipts({groupId,postId,text,account},suppliedDocument){

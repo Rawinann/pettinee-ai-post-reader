@@ -28,7 +28,19 @@ test('DOM preflight rejects login, wrong target, changed source, multiple compos
  f.document.location.href=url.replace('/100/','/101/');assert.equal(inspectReplyPage(args,f.document).state,'wrong_post');
  f.document.location.href='https://www.facebook.com/checkpoint/';assert.equal(inspectReplyPage(args,f.document).state,'blocked');
  f.document.location.href='https://www.facebook.com/login/';assert.equal(inspectReplyPage(args,f.document).state,'needs_login');
- f.document.location.href=url;f.editor.parentElement.append(f.editor.cloneNode());assert.equal(inspectReplyPage(args,f.document).state,'composer_unavailable');
+ f.document.location.href=url;f.document.getElementById('source').textContent=post.text;f.editor.parentElement.append(f.editor.cloneNode());assert.equal(inspectReplyPage(args,f.document).state,'composer_unavailable');
+});
+test('post dialog is inspected and an unnamed public composer cannot authorize sending',()=>{
+ const {document}=parseHTML('<html><body><div role="dialog"><article role="article"><p id="source"></p></article><div role="textbox" contenteditable="true" aria-label="เขียนความคิดเห็นที่แสดงต่อสาธารณะ..."></div></div></body></html>');
+ document.location={href:url};const args={groupId,postId,sourceText:post.text};
+ document.getElementById('source').textContent='โพสต์เปลี่ยนข้อความแล้ว';
+ assert.equal(inspectReplyPage(args,document).state,'source_changed');
+ document.getElementById('source').textContent=post.text;
+ assert.equal(inspectReplyPage(args,document).state,'account_unavailable');
+ document.querySelector('[role="textbox"]').setAttribute('aria-label','Comment as Test Admin');
+ assert.equal(inspectReplyPage(args,document).state,'ready');
+ document.querySelector('[role="dialog"]').remove();
+ assert.equal(inspectReplyPage(args,document).state,'waiting_page');
 });
 test('receipt requires matching message, account, top-level comment ID and exact target; hidden/ambiguous submit is rejected',()=>{
  const f=fixture(),args={groupId,postId,text:post.draft,account:'Test Admin'};
@@ -61,6 +73,15 @@ test('opening/closing/reopening the worker never fills or submits and status ref
 });
 test('worker status does not claim the source is connected on a different group or a hidden login form',()=>{
  const f=fixture();f.document.location.href='https://www.facebook.com/groups/999/';assert.equal(replyBrowserState({groupId},f.document).state,'wrong_page');f.document.location.href=url;const hidden=f.document.createElement('input');hidden.type='password';hidden.hidden=true;f.document.body.append(hidden);assert.equal(replyBrowserState({groupId},f.document).state,'open');hidden.hidden=false;assert.equal(replyBrowserState({groupId},f.document).state,'needs_login');
+});
+test('status reflects Facebook loading instead of retaining a stale error',async t=>{
+ const f=fixture();t.after(()=>f.publisher.close());await f.publisher.open();
+ f.page.evaluate=async()=>{throw Error('Execution context was destroyed, most likely because of a navigation');};
+ assert.equal((await f.publisher.refreshStatus()).state,'waiting_page');
+ assert.equal(f.publisher.status().phase,'waiting_page');
+ f.page.evaluate=async(fn,args)=>fn(args,{...f.document,querySelector:()=>null,querySelectorAll:()=>[],location:f.document.location});
+ assert.equal((await f.publisher.refreshStatus()).state,'waiting_page');
+ assert.equal(f.publisher.status().lastError,'');
 });
 test('collection reuses the worker and excludes sending or closing until it finishes',async t=>{const f=fixture();t.after(()=>f.publisher.close());let release;const gate=new Promise(r=>release=r);const collecting=f.publisher.withCollection(async()=>gate);await Promise.resolve();assert.equal(f.publisher.status().busy,true);await assert.rejects(f.publisher.prepare(post),e=>e.definitive===true);await assert.rejects(f.publisher.disconnect(),e=>e.definitive===true);release();await collecting;assert.equal(f.publisher.status().busy,false);assert.equal(f.publisher.status().browserOpen,true);assert.equal(f.clicks(),0);});
 
