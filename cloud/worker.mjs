@@ -11,7 +11,7 @@ import {createGuideService} from '../server/guides.mjs';
 import {createPetmommyWriter} from '../server/petmommy.mjs';
 import {classifyTopics,evaluateSafety,verifiedGuides,checkReply} from '../lib/workflow-policy.mjs';
 const normal=s=>String(s||'').normalize('NFC').replace(/\s+/gu,' ').trim();
-export function createCloudWorker({request,publisher,analyse,collect,workerId,expectedAccount,publishEnabled=false,journal=async()=>{},loadJournal=async()=>null}){
+export function createCloudWorker({request,publisher,analyse,collect,workerId,expectedAccount,publishEnabled=true,journal=async()=>{},loadJournal=async()=>null}){
  let pending,initialized=false,busy=false;
  return {
   async tick(){if(busy)return;busy=true;let lease;
@@ -19,7 +19,7 @@ export function createCloudWorker({request,publisher,analyse,collect,workerId,ex
     if(!initialized){pending=await loadJournal();initialized=true;}
     // A result lost in transit is reported again, never re-executed in Chrome.
     if(pending){await request('/api/worker/jobs/'+pending.id+'/complete',pending.body);pending=null;await journal(null);return;}
-    await request('/api/worker/heartbeat',publisher.status());const {job}=await request('/api/worker/claim',{});if(!job)return;
+    const {job}=await request('/api/worker/claim',{browser:publisher.status()});if(!job)return;
     lease=setInterval(()=>request('/api/worker/jobs/'+job.id+'/renew',{leaseToken:job.lease_token}).catch(()=>{}),30000);lease.unref?.();
     let result;
     try{
@@ -46,16 +46,17 @@ async function main(){
  const config=collectorConfig(root,{...env,COLLECTOR_PROFILE_DIR:env.COLLECTOR_PROFILE_DIR||'data/runtime/cloud-'+workerId+'-profile',COLLECTOR_OUTBOX_PATH:env.COLLECTOR_OUTBOX_PATH||'data/runtime/cloud-'+workerId+'-collector.sqlite'});config.statusPath=resolve(root,'data/runtime/cloud-'+workerId+'-collector-status.json');config.batchReportDir=resolve(root,'data/runtime/cloud-'+workerId+'-batch-reports');
  const publisher=createBrowserCommentPublisher({profileDir:config.profileDir,groupId:config.groupId,channel:config.channel});
  if(process.argv.includes('--login')){await publisher.open();console.log('เปิด Chrome ของ worker แล้ว ล็อกอินด้วยตัวเอง ปิดด้วย Ctrl+C');const stop=()=>publisher.close().finally(()=>process.exit(0));process.once('SIGINT',stop);process.once('SIGTERM',stop);await new Promise(()=>{});return;}
+ const pollSeconds=Number(env.CLOUD_WORKER_POLL_SECONDS||5);if(!Number.isInteger(pollSeconds)||pollSeconds<2||pollSeconds>60)throw Error('CLOUD_WORKER_POLL_SECONDS ต้องอยู่ระหว่าง 2–60');
  const request=workerRequest({origin:env.CLOUD_ORIGIN,token:env.CLOUD_WORKER_TOKEN}),intent=createIntentService(root),guides=createGuideService(root),catalog=JSON.parse(await readFile(resolve(root,'data/guides/catalog.json'),'utf8'));
  const writer=createPetmommyWriter({enabled:env.REPLY_LLM_ENABLED==='true',provider:env.REPLY_LLM_PROVIDER||'ollama',...(env.REPLY_LLM_MODEL?{model:env.REPLY_LLM_MODEL}:{}),apiKey:env.OPENAI_API_KEY||''});
  const collector=createDashboardCollector({publisher,config,ingest:event=>request('/api/worker/ingest',event)});
  const journalPath=resolve(root,'data/runtime/cloud-'+workerId+'-result.json');await mkdir(resolve(root,'data/runtime'),{recursive:true});
- const worker=createCloudWorker({workerId,expectedAccount,publisher,request,publishEnabled:env.CLOUD_WORKER_PUBLISH_ENABLED==='true',
+ const worker=createCloudWorker({workerId,expectedAccount,publisher,request,publishEnabled:env.CLOUD_WORKER_PUBLISH_ENABLED!=='false',
   journal:pending=>writeAtomicJSON(journalPath,pending),loadJournal:async()=>{try{return JSON.parse(await readFile(journalPath,'utf8'));}catch(e){if(e.code==='ENOENT')return null;throw Error('อ่านผลค้างในเครื่องไม่ได้ ต้องตรวจไฟล์ก่อนรับงานใหม่');}},
   analyse:async(post,options)=>{const start=performance.now(),classified=await intent.classify({text:post.text}),topics=classifyTopics(post.text),selected=verifiedGuides(await guides.search({text:post.text,species:'cat'}),catalog),safety=evaluateSafety(post.text,{topics,guides:selected,sourceMeta:post.sourceMeta});const generated=await writer.generate({...post,text:options.reviewedText||post.text,topics,guides:selected,safety},{externalDataReviewed:options.externalDataReviewed===true});return {intent:classified,topics,guides:selected,safety,draft:generated.draft,replyMeta:generated.meta,processingMs:Math.round(performance.now()-start)};},
   collect:async scope=>{await collector.start({scope});while((await collector.status()).running)await delay(1000);const result=await collector.status();if(!result.last||result.last.state!=='completed')throw Object.assign(Error(result.message||'ยังเก็บโพสต์ไม่ครบตามรอบ'),{definitive:true});return result.last;},
  });
  let stopped=false;const stop=()=>{stopped=true;collector.cancel().catch(()=>{});};process.once('SIGINT',stop);process.once('SIGTERM',stop);
- try{do{try{await worker.tick();}catch(error){console.error(error.statusCode===409?'ผลค้างต้องตรวจสอบบน Dashboard ก่อนรับงานต่อ':'Cloud/worker ยังไม่พร้อม ตรวจ config หรือการเชื่อมต่อ');if(error.statusCode===409)break;}if(process.argv.includes('--once'))break;if(!stopped)await delay(30000);}while(!stopped);}finally{await collector.close();await publisher.close();}
+ try{do{try{await worker.tick();}catch(error){console.error(error.statusCode===409?'ผลค้างต้องตรวจสอบบน Dashboard ก่อนรับงานต่อ':'Cloud/worker ยังไม่พร้อม ตรวจ config หรือการเชื่อมต่อ');if([401,403,409].includes(error.statusCode))break;}if(process.argv.includes('--once'))break;if(!stopped)await delay(pollSeconds*1000);}while(!stopped);}finally{await collector.close();await publisher.close();}
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).href)main().catch(()=>{console.error('เปิด Cloud worker ไม่สำเร็จ ตรวจค่าตั้งต้นและคู่มือ');process.exitCode=1;});

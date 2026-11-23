@@ -13,7 +13,7 @@ export function createCloudHTTP({store,service,auth}){
    if(path.startsWith('/api/worker/')){
     if(method!=='POST')throw fail('ไม่รองรับ method',405);const worker=await store.authenticateWorker(String(req.headers.authorization||'').replace(/^Bearer /,'')),value=await body(req);
     if(path==='/api/worker/heartbeat'){await store.heartbeat(worker.id,value);return send(200,{ok:true,workerId:worker.id});}
-    if(path==='/api/worker/claim')return send(200,{job:await store.claim(worker)});
+    if(path==='/api/worker/claim'){await store.heartbeat(worker.id,value.browser||{});return send(200,{job:await store.claim(worker)});}
     if(path==='/api/worker/ingest'&&!worker.capabilities.collect)throw fail('worker ไม่เปิดตัวเก็บโพสต์',403);
     if(path==='/api/worker/ingest')return send(200,await service.ingest({...value,authorized:true},worker.id,{worker:true}));
     const m=path.match(/^\/api\/worker\/jobs\/([a-f\d-]{36})\/(renew|complete)$/i);if(!m)throw fail('ไม่พบเส้นทาง worker',404);

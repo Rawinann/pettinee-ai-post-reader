@@ -25,6 +25,10 @@ test('topic phrases distinguish before and after neutering without inferring a d
  assert.ok(!topicsFor('ยังไม่ได้ทำหมัน อยากรู้ว่าควรทำตอนไหน').some(t=>t.id==='post-neuter'));
  assert.ok(topicsFor('เพิ่งพาแมวไปทำหมันมา ก่อนกลับบ้าน').some(t=>t.id==='post-neuter'));
 });
+
+test('the two-cat water and litter-clump example ranks the supplied educational guide first',async()=>{
+ const text='ที่บ้านเลี้ยง 2 ตัว ดญ. ทั้งคู่ อายุห่างกัน 20 วัน กินน้ำเยอะพอๆกัน เป็นแบบนี้ตั้งแต่เลี้ยงมา ฉี่ก้อนใหญ่ของบริชติช ก้อนเล็กของสกอตติช แบบนี้ปกติไหมครับ',result=await service.search({text,species:'cat'});assert.equal(result.results[0].id,'cat-polyuria-polydipsia-qa');assert.equal(result.results[0].url,'https://pettinee.meongsiljang.com/th/guide/qa/cat-polyuria-polydipsia-qa');
+});
 test('catalog parser captures metadata and excludes unrelated and foreign links',()=>{
  const {articles:rows}=extractCatalog('<a href="/th/guide/qa/cat-example"><p>ชื่อคู่มือแมว</p><p>คำอธิบาย</p><span>การดูแล</span></a><a href="https://evil.test/th/guide/qa/fake"><p>ปลอม</p></a><a href="/th/guide/qa?page=2">2</a>','https://pettinee.meongsiljang.com/th/guide/qa');
  assert.equal(rows.length,1);assert.equal(rows[0].title,'ชื่อคู่มือแมว');

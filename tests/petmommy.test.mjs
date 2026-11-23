@@ -61,3 +61,17 @@ test('conversational fallback avoids report quotes and does not assume anxiety f
 test('report-like LLM output falls back instead of showing a form as a comment',async()=>{
  for(const info of ['จากข้อมูลที่มี กรณีดังกล่าวยังมีข้อมูลที่ขาดครับ','Info: มีคู่มือให้อ่านครับ']){const result=await createPetmommyWriter({enabled:true,fetcher:async()=>Response.json({message:{content:JSON.stringify({...output,info})}})}).generate(post);assert.equal(result.meta.mode,'template');assert.doesNotMatch(result.draft,/จากข้อมูลที่มี|Info:/);}
 });
+
+const waterText='ที่บ้านเลี้ยง 2 ตัว ดญ. ทั้งคู่ อายุห่างกัน 20 วัน กินน้ำเยอะพอๆกัน เป็นแบบนี้ตั้งแต่เลี้ยงมา ฉี่ก้อนใหญ่ของบริชติช ก้อนเล็กของสกอตติช แบบนี้ปกติไหมครับ';
+const waterGuides=[catalog.articles.find(g=>g.id==='cat-polyuria-polydipsia-qa')],waterTopics=classifyTopics(waterText),waterPost={text:waterText,guides:waterGuides,topics:waterTopics,safety:evaluateSafety(waterText,{topics:waterTopics,guides:waterGuides})};
+test('the two-cat example has source-bound educational info and a relevant URL without a fabricated consultation or breed explanation',async()=>{
+ const result=await createPetmommyWriter().generate(waterPost);assert.match(result.draft,/ก้อนฉี่ของน้องสองตัว/);assert.match(result.draft,/น้ำหนักตัว/);assert.ok(result.draft.endsWith(waterGuides[0].url));assert.doesNotMatch(result.draft,/เคยปรึกษา|ขึ้นอยู่กับ.*สายพันธุ์|45|40|ปกติแน่นอน/);assert.equal(result.meta.educationSources[0].guideId,waterGuides[0].id);assert.equal(petmommyInput(waterPost).educationNotes.length,1);assert.equal(petmommyInput({...waterPost,guides:[]}).educationNotes.length,0);assert.equal(petmommyInput({...waterPost,guides:[{...waterGuides[0],url:'https://evil.example'}]}).educationNotes.length,0);assert.deepEqual(checkReply(result.draft,waterPost),[]);
+});
+
+test('the educational fallback does not claim equal water intake when the source explicitly says otherwise',async()=>{
+ const result=await createPetmommyWriter().generate({...waterPost,text:waterPost.text.replace('กินน้ำเยอะพอๆกัน','กินน้ำไม่เท่ากัน')});assert.doesNotMatch(result.draft,/กินน้ำดูพอ ๆ กัน/);assert.match(result.draft,/น้ำหนักตัว/);
+});
+
+test('LLM cannot turn the supplied tone example into invented personal authority or an unsupported breed conclusion',async()=>{
+ for(const info of ['จากที่เคยปรึกษาคุณหมอมาครับ ลองอ่านบทความได้ครับ','ก้อนฉี่ใหญ่เล็กขึ้นอยู่กับขนาดแมวและสายพันธุ์ครับ']){const result=await createPetmommyWriter({enabled:true,fetcher:async()=>Response.json({message:{content:JSON.stringify({hook:'น้องสองตัวกินน้ำพอ ๆ กันนะครับ',info})}})}).generate(waterPost);assert.equal(result.meta.mode,'template');assert.match(result.draft,/น้ำหนักตัว/);assert.doesNotMatch(result.draft,/เคยปรึกษา|ขึ้นอยู่กับ/);}
+});
