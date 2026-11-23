@@ -19,6 +19,7 @@ export function createWorkflowHTTP(service,{operatorToken='',ingestToken=''}={})
    if(path==='/api/workflow/guide-clicks')return {body:service.trackingReport()};
    if(path==='/api/workflow/reply-status')return {body:service.replyStatus()};
    if(path==='/api/workflow/reply-browser')return {body:await service.replyBrowserStatus()};
+   if(path==='/api/workflow/collection')return {body:await service.collectionStatus()};
    const match=path.match(/^\/api\/workflow\/posts\/([a-f\d-]{36})$/);if(match)return {body:service.detail(match[1])};
    throw workflowError('ไม่พบเส้นทางนี้',404);
   }
@@ -40,6 +41,8 @@ export function createWorkflowHTTP(service,{operatorToken='',ingestToken=''}={})
   if(path==='/api/workflow/page/import')return {status:202,body:await service.importPage(body.postId)};
   if(path==='/api/workflow/reply-browser/open')return {body:await service.openReplyBrowser()};
   if(path==='/api/workflow/reply-browser/close')return {body:await service.closeReplyBrowser()};
+  if(path==='/api/workflow/collection/start')return {status:202,body:await service.startCollection(body)};
+  if(path==='/api/workflow/collection/cancel')return {body:await service.cancelCollection()};
   const match=path.match(/^\/api\/workflow\/posts\/([a-f\d-]{36})\/(draft|approve|copy|manual|publish|retry|resolve|comment-preview|comment-send|rewrite)$/);
   if(match){const operations={draft:'edit',approve:'approve',copy:'copy',manual:'manual',publish:'publish',retry:'retry',resolve:'resolvePublication','comment-preview':'prepareComment','comment-send':'sendComment',rewrite:'rewrite'};return {body:await service[operations[match[2]]](match[1],body)};}
   throw workflowError('ไม่พบเส้นทางนี้',404);

@@ -30,6 +30,7 @@ const files = new Map([
   ['/lib/guide-ui.mjs', ['lib/guide-ui.mjs', 'text/javascript; charset=utf-8']],
   ['/lib/workflow-ui.mjs', ['lib/workflow-ui.mjs', 'text/javascript; charset=utf-8']],
   ['/lib/comment-ui.mjs', ['lib/comment-ui.mjs', 'text/javascript; charset=utf-8']],
+  ['/lib/collection-ui.mjs', ['lib/collection-ui.mjs', 'text/javascript; charset=utf-8']],
   ['/lib/workflow-policy.mjs', ['lib/workflow-policy.mjs', 'text/javascript; charset=utf-8']],
   ['/lib/guide-match.mjs', ['lib/guide-match.mjs', 'text/javascript; charset=utf-8']],
   ['/data/Pettinee_Facebook_200_Posts_Public_Excerpts_19Nov2026.xlsx', ['data/Pettinee_Facebook_200_Posts_Public_Excerpts_19Nov2026.xlsx','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']],
@@ -208,7 +209,7 @@ if (direct) {
   const listenHost=process.env.HOST||'127.0.0.1';
   if(!['127.0.0.1','localhost','::1'].includes(listenHost)&&(!process.env.PUBLIC_ORIGIN||!process.env.OPERATOR_TOKEN))throw Error('External hosting requires PUBLIC_ORIGIN and OPERATOR_TOKEN');
   const replyConfig=collectorConfig(projectDir),browserPublisher=(process.argv.includes('--browser-replies')||process.env.BROWSER_REPLY_ENABLED==='true')?createBrowserCommentPublisher({profileDir:replyConfig.profileDir,groupId:replyConfig.groupId,channel:replyConfig.channel}):null;
-  const server = createAppServer({publicOrigin:process.env.PUBLIC_ORIGIN||'',workflowOptions:{browserPublisher,
+  const server = createAppServer({publicOrigin:process.env.PUBLIC_ORIGIN||'',workflowOptions:{browserPublisher,collectorOptions:replyConfig,collectorStatusPath:replyConfig.statusPath,
     replyWriter:createPetmommyWriter({enabled:process.argv.includes('--petmommy-ai')||process.env.REPLY_LLM_ENABLED==='true',provider:process.env.REPLY_LLM_PROVIDER||'ollama',apiKey:process.env.OPENAI_API_KEY||'',...(process.env.REPLY_LLM_MODEL?{model:process.env.REPLY_LLM_MODEL}:{}),baseUrl:process.env.REPLY_OLLAMA_URL||'http://127.0.0.1:11434'}),trackingOrigin:process.env.GUIDE_TRACKING_ORIGIN||'',
     ...(process.env.WORKFLOW_DB_PATH?{dbPath:resolve(process.env.WORKFLOW_DB_PATH)}:{}),operatorToken:process.env.OPERATOR_TOKEN||'',ingestToken:process.env.INGEST_TOKEN||'',
     chatbotUrl:process.env.MEONGSILJANG_URL||'https://meongsiljang.com/th',televetUrl:process.env.TELEVET_URL||'',

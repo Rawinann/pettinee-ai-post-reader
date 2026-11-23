@@ -8,8 +8,9 @@ import {readCollectorStatus} from './collector-status.mjs';
 import {createCommentDelivery} from './comment-delivery.mjs';
 import {createPetmommyWriter} from './petmommy.mjs';
 import {createGuideTracking} from './guide-tracking.mjs';
+import {createDashboardCollector} from './dashboard-collector.mjs';
 export function integrationURL(value){try{const u=new URL(value);if(u.protocol!=='https:'||u.username||u.password)return '';u.search='';u.hash='';return u.href;}catch{return '';}}
-export function createWorkflowService({rootDir,dbPath,intent,guides,pageAdapter,meta={},autoRun=true,pollMs=500,clock=Date.now,storeOptions={},chatbotUrl='https://meongsiljang.com/th',televetUrl='',collectorStatusPath=join(dirname(dbPath),'collector-status.json'),browserPublisher=null,replyWriter=null,trackingOrigin=''}={}){
+export function createWorkflowService({rootDir,dbPath,intent,guides,pageAdapter,meta={},autoRun=true,pollMs=500,clock=Date.now,storeOptions={},chatbotUrl='https://meongsiljang.com/th',televetUrl='',collectorStatusPath=join(dirname(dbPath),'collector-status.json'),browserPublisher=null,replyWriter=null,trackingOrigin='',collectorOptions=null}={}){
  const store=createWorkflowStore(dbPath,{clock,...storeOptions}),owner=randomUUID(),page=pageAdapter||createPageAdapter(meta);
  let catalogPromise,work=null,timer=null,closing=null,stopped=false,mockTimer=null,mockRemaining=0;
  const catalog=()=>catalogPromise??=readFile(join(rootDir,'data/guides/catalog.json'),'utf8').then(JSON.parse).catch(e=>{catalogPromise=null;throw e;});
@@ -17,6 +18,7 @@ export function createWorkflowService({rootDir,dbPath,intent,guides,pageAdapter,
  const checkedPost=(id,revision)=>{const post=get(id);if(post.revision!==revision)throw workflowError('คำตอบเปลี่ยนไปแล้ว กรุณาโหลดข้อมูลล่าสุด',409);const errors=checkReply(post.draft,post);if(errors.length)throw workflowError(errors.join(' · '),422);return post;};
  const commentDelivery=createCommentDelivery({store,checkedPost,publisher:browserPublisher,clock});
  const writer=replyWriter||createPetmommyWriter(),tracking=createGuideTracking({store,origin:trackingOrigin});
+ const collector=createDashboardCollector({publisher:browserPublisher,config:collectorOptions,ingest:event=>service.ingest(event),remaining:()=>store.stats().jobs.filter(j=>['pending','running'].includes(j.state)).reduce((n,j)=>n+j.count,0),clock});
  const writeReply=async(post,options)=>{const generated=await writer.generate(post,options),tracked=tracking.attach(post,generated.draft);const replyMeta={...generated.meta,links:tracked.links};const errors=checkReply(tracked.draft,{...post,replyMeta});if(errors.length)throw workflowError(errors.join(' · '),422);return {draft:tracked.draft,replyMeta};};
  async function execute(job){
   const started=performance.now(),heartbeat=setInterval(()=>store.heartbeat(job),20000);heartbeat.unref?.();
@@ -38,6 +40,9 @@ export function createWorkflowService({rootDir,dbPath,intent,guides,pageAdapter,
  const service={
   store,page,runOnce,
   replyStatus:()=>writer.status(),
+  collectionStatus:()=>collector.status(),
+  startCollection:body=>collector.start(body),
+  cancelCollection:()=>collector.cancel(),
   replyBrowserStatus:()=>commentDelivery.refreshStatus(),
   openReplyBrowser:()=>commentDelivery.openBrowser(),
   closeReplyBrowser:()=>commentDelivery.closeBrowser(),
@@ -48,7 +53,7 @@ export function createWorkflowService({rootDir,dbPath,intent,guides,pageAdapter,
   ingest(raw,options){const event=validateSourceEvent(raw,options);event.initialSafety=evaluateSafety(event.text,{sourceMeta:event.sourceMeta});const result=store.ingest(event);kick();return result;},
   list:options=>store.list(options),
   detail(id){const post=get(id);return {...post,replyErrors:post.draft?checkReply(post.draft,post):[],history:store.history(id),canPublishPage:post.sourceType==='page'&&page.status().canPublish,commentDelivery:commentDelivery.availability(post),demoComment:store.demoReceipt(id),publication:store.publication(id)};},
-  async status(){await commentDelivery.refreshStatus();const [guideStatus,intentStatus]=await Promise.all([guides.status(),intent.status()]);const encoderAvailable=await access(join(rootDir,'models/guide-encoder/onnx/model_quantized.onnx')).then(()=>true,()=>false);return {available:true,brand:'แอพคุณหมอใจดี',company:'Pettinee',persistence:'server-sqlite',...store.stats(),connections:{collector:await readCollectorStatus(collectorStatusPath),page:page.status(),group:page.groupStatus(),import:{available:true},mock:{available:true,running:!!mockTimer,remaining:mockRemaining}},guides:{...guideStatus,encoderAvailable,metadataOnly:true},intent:{ready:intentStatus.ready,trainingLabelStatus:intentStatus.trainingLabelStatus},commentDelivery:commentDelivery.status(),reply:writer.status(),guideTracking:tracking.report(),approval:{required:true,autoReply:false,generator:writer.status().enabled?'petmommy-llm-with-fallback':'petmommy-template',llmConnected:!!writer.status().lastSuccessAt},products:{chatbot:{mode:'external-link',url:integrationURL(chatbotUrl),apiConnected:false},televet:{mode:integrationURL(televetUrl)?'external-link':'not-configured',url:integrationURL(televetUrl),apiConnected:false,bookingConnected:false}},mockScenarios:MOCK_SCENARIOS};},
+  async status(){await commentDelivery.refreshStatus();const [guideStatus,intentStatus]=await Promise.all([guides.status(),intent.status()]);const encoderAvailable=await access(join(rootDir,'models/guide-encoder/onnx/model_quantized.onnx')).then(()=>true,()=>false);return {available:true,brand:'แอพคุณหมอใจดี',company:'Pettinee',persistence:'server-sqlite',...store.stats(),connections:{collector:await readCollectorStatus(collectorStatusPath),page:page.status(),group:page.groupStatus(),import:{available:true},mock:{available:true,running:!!mockTimer,remaining:mockRemaining}},guides:{...guideStatus,encoderAvailable,metadataOnly:true},intent:{ready:intentStatus.ready,trainingLabelStatus:intentStatus.trainingLabelStatus},commentDelivery:commentDelivery.status(),reply:writer.status(),guideTracking:tracking.report(),collection:await collector.status(),approval:{required:true,autoReply:false,generator:writer.status().enabled?'petmommy-llm-with-fallback':'petmommy-template',llmConnected:!!writer.status().lastSuccessAt},products:{chatbot:{mode:'external-link',url:integrationURL(chatbotUrl),apiConnected:false},televet:{mode:integrationURL(televetUrl)?'external-link':'not-configured',url:integrationURL(televetUrl),apiConnected:false,bookingConnected:false}},mockScenarios:MOCK_SCENARIOS};},
   edit(id,{text,revision,actor='operator'}){if(typeof text!=='string'||!text.trim()||text.length>2400)throw workflowError('คำตอบต้องยาว 1–2,400 ตัวอักษร');return store.edit(id,text,revision,String(actor).slice(0,80));},
   approve(id,{revision,acknowledged,actor='operator'}){if(acknowledged!==true)throw workflowError('ต้องอ่านข้อความ คู่มือ และข้อควรตรวจ แล้วทำเครื่องหมายยืนยัน');checkedPost(id,revision);return store.approve(id,revision,String(actor).slice(0,80));},
   copy(id,{revision,actor='operator'}){checkedPost(id,revision);return {text:store.copy(id,revision,String(actor).slice(0,80)),published:false};},
@@ -69,7 +74,7 @@ export function createWorkflowService({rootDir,dbPath,intent,guides,pageAdapter,
   mock({scenario='neuter',eventId}={}){return service.ingest(mockEvent(scenario,eventId));},
   startMock({scenario='neuter',count=3,intervalMs=5000}={}){if(!MOCK_SCENARIOS.some(s=>s.id===scenario)||!Number.isInteger(count)||count<1||count>30||!Number.isInteger(intervalMs)||intervalMs<1000||intervalMs>60000)throw workflowError('Mock ต้องมี 1–30 events ห่างกัน 1–60 วินาที');if(mockTimer)throw workflowError('มี Mock stream ทำงานอยู่แล้ว',409);mockRemaining=count;const emit=()=>{if(stopped||mockRemaining<=0){service.stopMock();return;}service.mock({scenario});mockRemaining--;if(!mockRemaining)service.stopMock();};mockTimer=setInterval(emit,intervalMs);mockTimer.unref?.();emit();return {running:!!mockTimer,remaining:mockRemaining};},
   stopMock(){if(mockTimer)clearInterval(mockTimer);mockTimer=null;mockRemaining=0;return {running:false};},
-  close(){if(closing)return closing;stopped=true;if(timer)clearInterval(timer);service.stopMock();closing=(async()=>{if(work)await work;await commentDelivery.close();store.close();})();return closing;},
+  close(){if(closing)return closing;stopped=true;if(timer)clearInterval(timer);service.stopMock();closing=(async()=>{await collector.close();if(work)await work;await commentDelivery.close();store.close();})();return closing;},
  };
  if(autoRun){timer=setInterval(kick,Math.max(100,pollMs));timer.unref?.();kick();}
  return service;

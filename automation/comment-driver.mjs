@@ -38,7 +38,7 @@ export function createBrowserCommentPublisher({profileDir,groupId,channel='chrom
   if(result.existingDraft&&!allowDraft)throw fail('ช่องคอมเมนต์มีข้อความค้างอยู่ กรุณาตรวจใน Chrome ก่อน ระบบจะไม่เขียนทับ');
   ready=true;state='ready';account=result.account;lastCheckedAt=new Date(clock()).toISOString();return {page:p,...result};
  }
- async function exclusive(fn){if(busy)throw fail('กำลังเตรียมหรือส่งโพสต์อื่น กรุณารอผลก่อน');busy=true;try{return await fn();}finally{busy=false;}}
+ async function exclusive(fn){if(busy)throw fail('Chrome กำลังดึงโพสต์หรือเตรียมส่งคอมเมนต์ กรุณารอรอบเดิมจบก่อน');busy=true;try{return await fn();}finally{busy=false;}}
  return {
   enabled:true,
   groupId,
@@ -46,6 +46,7 @@ export function createBrowserCommentPublisher({profileDir,groupId,channel='chrom
   refreshStatus,
   async open(){await exclusive(async()=>{const p=await browserPage();try{await p.goto('https://www.facebook.com/groups/'+groupId+'/',{waitUntil:'domcontentloaded',timeout:45000});await p.bringToFront?.();ready=false;account=null;}catch{state='error';throw fail('เปิดหน้ากลุ่มไม่สำเร็จ กรุณาตรวจ Chrome และการเชื่อมต่อ');}});return refreshStatus();},
   disconnect:()=>exclusive(async()=>{await disconnect();return status();}),
+  withCollection:task=>exclusive(async()=>{const p=await browserPage();ready=false;account=null;try{await p.goto('https://www.facebook.com/groups/'+groupId+'/',{waitUntil:'domcontentloaded',timeout:45000});await p.bringToFront?.();return await task(p);}finally{ready=false;account=null;state='open';}}),
   prepare:post=>exclusive(async()=>{const target=groupCommentTarget(post,groupId),state=await inspect(post,target);return {...target,account:state.account};}),
   send:(post,expected)=>exclusive(async()=>{
    let attempted=false,composer=null,p=null;
