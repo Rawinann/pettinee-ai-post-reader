@@ -134,7 +134,7 @@ export function createAppServer({ provider = null, rootDir = projectDir, maxBody
       }
       if (pathname.includes('\\') || pathname.includes('\0')) return fail(res, 400, 'ที่อยู่ไม่ถูกต้อง');
 
-      const guideMatch=pathname.match(/^\/r\/g\/([a-f0-9]{32})(\/open)?$/);
+      const guideMatch=pathname.match(/^\/(?:r\/)?g\/([a-f0-9]{32}|[A-Za-z0-9_-]{12})(\/open)?$/);
       if(guideMatch){
         if(!workflow)return fail(res,503,'ตัวนับลิงก์ต้องใช้ server');
         const outbound=!!guideMatch[2];

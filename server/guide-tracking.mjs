@@ -6,7 +6,7 @@ export function createGuideTracking({store,origin=''}={}){
  let base='';if(origin){const u=new URL(origin);if(u.protocol!=='https:'||u.username||u.password||u.pathname!=='/'||u.search||u.hash||['localhost','127.0.0.1','[::1]'].includes(u.hostname))throw Error('GUIDE_TRACKING_ORIGIN ต้องเป็น HTTPS origin สาธารณะของ server ตัวนี้');base=u.origin;}
  return {
   status:()=>({mode:base?'landing':'utm',configuredOrigin:base||null,publicReachabilityVerified:false,countsReaders:false,countsUniquePeople:false}),
-  attach(post,draft){const links=[];for(const guide of post.guides){if(!draft.includes(guide.url))continue;const destination=guideDestination(guide.url),token=randomBytes(16).toString('hex'),mode=base?'landing':'utm',url=base?base+'/r/g/'+token:taggedGuide(destination,token);store.addGuideLink({token,postId:post.id,guideId:guide.id,title:guide.title,destination,url,mode});draft=draft.split(guide.url).join(url);links.push({guideId:guide.id,url,token,mode});}return {draft,links};},
+  attach(post,draft){const links=[];for(const guide of post.guides){if(!draft.includes(guide.url))continue;const destination=guideDestination(guide.url);let token;do{token=randomBytes(9).toString('base64url');}while(store.guideLink(token));const mode=base?'landing':'utm',url=base?base+'/g/'+token:taggedGuide(destination,token);store.addGuideLink({token,postId:post.id,guideId:guide.id,title:guide.title,destination,url,mode});draft=draft.split(guide.url).join(url);links.push({guideId:guide.id,url,token,mode});}return {draft,links};},
   resolve(token,{method='GET',userAgent='',purpose='',outbound=false}={}){
    const link=store.guideLink(token);if(!link)return null;
    const destination=taggedGuide(link.destination,token);

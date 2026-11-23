@@ -70,8 +70,8 @@ npm.cmd run prepare:reply-training -- path/to/reviewed-examples.json data/runtim
 
 ลิงก์ในคอมเมนต์ → หน้า Pettinee ของเรา → ปุ่ม **อ่านคู่มือ** → คู่มือเกาหลี/ไทยปลายทาง
 
-1. เปิด `/r/g/<opaque-token>`: นับการเปิดหน้าเรา
-2. กดปุ่ม ส่ง POST `/r/g/<opaque-token>/open`: นับการกดไปคู่มือ แล้วตอบ 303 ไป URL คู่มือที่ตรวจแล้ว
+1. เปิด `/g/<opaque-token>`: นับการเปิดหน้าเรา
+2. กดปุ่ม ส่ง POST `/g/<opaque-token>/open`: นับการกดไปคู่มือ แล้วตอบ 303 ไป URL คู่มือที่ตรวจแล้ว
 3. แนบ `utm_source=facebook`, `utm_medium=community_reply`, `utm_campaign=petmommy_guide`, `utm_content=<opaque-token>` เพื่อให้เชื่อมกับสถิติฝั่งเกาหลีภายหลังได้ [UTM ของ Google Analytics](https://support.google.com/analytics/answer/10917952?hl=en)
 
 หน้าเราแสดงเฉพาะชื่อคู่มือ ไม่แสดงโพสต์ ชื่อผู้โพสต์ หรือข้อมูลเคส URL มีเพียง token สุ่ม ไม่ใส่ Facebook post ID หรือข้อมูลส่วนบุคคล ไม่รับ URL ปลายทางจาก query จึงไม่เป็น open redirect
@@ -106,3 +106,11 @@ npm.cmd test
 ```
 
 ทดสอบการเก็บร่าง LLM/แม่แบบ การตรวจข้อมูลก่อนส่ง OpenAI ด้วย provider จำลอง ผลลัพธ์ผิด schema/แต่งประสบการณ์/ลิงก์ผิด การยกเลิกการอนุมัติหลังเขียนใหม่ UTM หน้า landing ปุ่ม POST การ redirect แยก HEAD/bot และ Demo การป้องกันสถิติด้วย operator token รวมถึง dataset export ที่ต้องตรวจโดยคน ไม่มีการส่งคอมเมนต์ Facebook จริงหรือเรียกงาน fine-tune ระหว่างพัฒนา ไม่ได้ตรวจภาพหน้า landing ด้วย native browser ในรอบนี้
+
+### Dashboard และลิงก์สั้น
+
+หน้าหลักแสดงเพียง **เข้าเว็บเรา** และ **ไปอ่านคู่มือ** กด **ดูรายละเอียด** เพื่อดูอันดับคู่มือ bot/preview และ Demo ในหน้าตั้งค่า ยอดเข้าเว็บหมายถึงหน้าอ่านต่อที่นับได้จากลิงก์ติดตาม ไม่ใช่ผู้เข้าชมเว็บทั้งหมด และนับเป็นครั้งไม่ใช่คนไม่ซ้ำ
+
+เมื่อตั้ง `GUIDE_TRACKING_ORIGIN` เป็น server HTTPS สาธารณะที่รองรับเส้นทางนี้ ลิงก์ใหม่ใช้ `/g/` ตามด้วย token สุ่ม 12 ตัว เช่น `https://your-domain.example/g/AbCdEf123_-X` โดยเก็บ URL คู่มือเต็มและ UTM ฝั่ง server ลิงก์เก่า `/r/g/<32-hex-token>` ยังเปิดและนับได้ ไม่เปลี่ยนลิงก์ในคำตอบเก่าที่แอดมินตรวจแล้ว
+
+หากยังไม่ตั้ง server สาธารณะ ระบบยังใช้ URL คู่มือพร้อม UTM ที่เปิดได้จริง จะไม่สร้างลิงก์สั้นไป localhost หรืออ้างว่าเว็บไซต์ static เดิมรับยอดคลิกแล้ว การเตรียมเส้นทางนี้ยังไม่ใช่การ deploy backend

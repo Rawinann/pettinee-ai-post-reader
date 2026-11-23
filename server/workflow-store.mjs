@@ -33,7 +33,7 @@ export function createWorkflowStore(path,{clock=Date.now,maxAttempts=3,leaseMs=1
  return {
   get,
   addGuideLink({token,postId,guideId,title,destination,url,mode}){required(postId);db.prepare('INSERT INTO workflow_guide_links VALUES(?,?,?,?,?,?,?,?)').run(token,postId,guideId,title,destination,url,mode,now());},
-  guideLink(token){return /^[a-f0-9]{32}$/.test(token)?db.prepare('SELECT * FROM workflow_guide_links WHERE token=?').get(token):null;},
+  guideLink(token){return /^(?:[a-f0-9]{32}|[A-Za-z0-9_-]{12})$/.test(token)?db.prepare('SELECT * FROM workflow_guide_links WHERE token=?').get(token):null;},
   countGuideRequest(token,kind){if(!['page','guide','preview'].includes(kind))throw Error('Invalid click kind');db.prepare('INSERT INTO workflow_guide_clicks VALUES(?,?,?,1) ON CONFLICT(token,day,kind) DO UPDATE SET count=count+1').run(token,now().slice(0,10),kind);},
   guideClickReport(){
    const rows=db.prepare(`SELECT l.guide_id AS guideId,l.title,COUNT(DISTINCT l.token) AS links,
