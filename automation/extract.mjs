@@ -49,7 +49,8 @@ export function sourcePageState({groupId},suppliedDocument){
  const doc=suppliedDocument||document,u=new URL(doc.location.href);
  if(!['www.facebook.com','web.facebook.com','m.facebook.com','facebook.com'].includes(u.hostname))return 'wrong_page';
  if(/\/checkpoint|\/challenge|\/two_step_verification/.test(u.pathname))return 'blocked';
- if(/\/login/.test(u.pathname)||doc.querySelector('input[type="password"],#login_form'))return 'needs_login';
+ const visible=el=>!el.closest('[hidden],[aria-hidden="true"]')&&(typeof getComputedStyle!=='function'||(getComputedStyle(el).display!=='none'&&getComputedStyle(el).visibility!=='hidden'&&el.getClientRects().length>0));
+ if(/\/login/.test(u.pathname)||Array.from(doc.querySelectorAll('input[type="password"],#login_form')).some(visible))return 'needs_login';
  if(!new RegExp('^/groups/'+groupId+'/?$').test(u.pathname))return 'wrong_page';
  if(!doc.querySelector('[role="feed"],[role="article"],article'))return 'waiting_feed';
  return 'ready';

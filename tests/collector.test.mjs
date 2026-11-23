@@ -33,6 +33,7 @@ test('extractor fails visibly on missing body, handles colored headings and mark
 test('login, checkpoint and off-source pages pause collection; profile and source configuration stay separate',()=>{
  assert.equal(sourcePageState({groupId},documentFor(fixtureHTML())),'ready');
  assert.equal(sourcePageState({groupId},documentFor('<input type="password">')),'needs_login');
+ assert.equal(sourcePageState({groupId},documentFor(fixtureHTML()+'<div hidden><input type="password"></div>')),'ready');
  assert.equal(sourcePageState({groupId},documentFor('','https://www.facebook.com/checkpoint/')),'blocked');
  assert.equal(sourcePageState({groupId},documentFor(fixtureHTML(),'https://www.facebook.com/messages/')),'wrong_page');
  const c=collectorConfig(root,{});assert.equal(c.groupId,groupId);assert.equal(c.appPort,4187);assert.ok(c.profileDir.endsWith('collector-profile'));assert.throws(()=>collectorConfig(root,{COLLECTOR_GROUP_URL:'https://evil.example/groups/123'}));assert.throws(()=>collectorConfig(root,{COLLECTOR_REFRESH_SECONDS:'1'}));
