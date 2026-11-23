@@ -68,7 +68,7 @@ export async function collectInBatches({reader,outbox,ingest,groupId,batchSize=4
     // never scrolls to the top and never discards surplus cards already loaded.
    }
   }
- }catch(error){reason=isCancelled()?'cancelled':isNavigationTransition(error)?'navigation':'error';if(reason==='error')report.error=String(error.message||'Collection error').slice(0,300);}
+ }catch(error){reason=isCancelled()?'cancelled':isNavigationTransition(error)?'navigation':'error';if(reason==='error'){report.error=String(error.message||'Collection error').slice(0,300);report.errorCode=String(error.code||error.name||'error').slice(0,80);}}
  await flush(reason);await deliver();
  report.reason=Object.hasOwn(BATCH_REASONS,reason)?reason:'error';
  report.collectionComplete=reason==='overlap_reached';

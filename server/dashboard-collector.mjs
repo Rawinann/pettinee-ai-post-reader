@@ -1,17 +1,15 @@
-import {mkdir,writeFile,rename} from 'node:fs/promises';
-import {dirname} from 'node:path';
 import {randomUUID} from 'node:crypto';
 import {createBrowserReader} from '../automation/browser.mjs';
 import {createCollectorOutbox} from '../automation/outbox.mjs';
 import {collectInBatches} from '../automation/batch.mjs';
-import {persistBatchReport} from '../automation/batch-report.mjs';
+import {persistBatchReport,writeAtomicJSON} from '../automation/batch-report.mjs';
 import {readCollectorStatus} from './collector-status.mjs';
 import {workflowError} from './workflow-store.mjs';
-const summary=r=>r?{runId:r.runId,state:r.state,scope:r.scope||'catchup',read:r.read||0,new:r.new||0,seen:r.seen||0,changed:r.changed||0,delivered:r.delivered||0,rounds:Array.isArray(r.rounds)?r.rounds.length:r.rounds||0,reason:r.reason||null,collectionComplete:r.collectionComplete===true,analysisRemaining:r.analysisRemaining||0,finishedAt:r.finishedAt||null}:null;
+const summary=r=>r?{runId:r.runId,state:r.state,scope:r.scope||'catchup',read:r.read||0,new:r.new||0,seen:r.seen||0,changed:r.changed||0,delivered:r.delivered||0,rounds:Array.isArray(r.rounds)?r.rounds.length:r.rounds||0,reason:r.reason||null,errorCode:r.errorCode||null,collectionComplete:r.collectionComplete===true,analysisRemaining:r.analysisRemaining||0,finishedAt:r.finishedAt||null}:null;
 export function createDashboardCollector({publisher,config,ingest,remaining=()=>0,readerFactory=createBrowserReader,outboxFactory=createCollectorOutbox,clock=Date.now}={}){
  const available=!!publisher?.withCollection&&!!config;let job=null,starting=false,cancelled=false,last=null,closed=false,writes=Promise.resolve();
  async function status(){const previous=!last&&config?await readCollectorStatus(config.statusPath,{clock}):null;const lastSummary=summary(last)||previous?.batch||null;if(lastSummary)lastSummary.analysisRemaining=remaining();return {available,running:starting||!!job,batchSize:40,last:lastSummary,message:last?.message||previous?.message||'เลือกดึง 40 โพสต์ล่าสุด หรืออ่านต่อจนถึงช่วงข้อมูลเดิม'};}
- function save(report,counts){delete report.error;last=structuredClone(report);const captured=structuredClone(last);writes=writes.catch(()=>{}).then(async()=>{await persistBatchReport(config.batchReportDir,captured);const value={version:1,groupId:config.groupId,mode:'batch',state:captured.state,updatedAt:new Date(clock()).toISOString(),lastScanAt:new Date(clock()).toISOString(),lastCaptureAt:captured.new?new Date(clock()).toISOString():null,feedOrder:captured.feedOrder,counts,message:captured.message||'กำลังดึงโพสต์ล่าสุด',batch:{...summary(captured),phase:captured.state==='running'?'collecting':'finished'}};await mkdir(dirname(config.statusPath),{recursive:true});await writeFile(config.statusPath+'.tmp',JSON.stringify(value));await rename(config.statusPath+'.tmp',config.statusPath);});return writes;}
+ function save(report,counts){delete report.error;last=structuredClone(report);const captured=structuredClone(last);writes=writes.catch(()=>{}).then(async()=>{await persistBatchReport(config.batchReportDir,captured);const value={version:1,groupId:config.groupId,mode:'batch',state:captured.state,updatedAt:new Date(clock()).toISOString(),lastScanAt:new Date(clock()).toISOString(),lastCaptureAt:captured.new?new Date(clock()).toISOString():null,feedOrder:captured.feedOrder,counts,message:captured.message||'กำลังดึงโพสต์ล่าสุด',batch:{...summary(captured),phase:captured.state==='running'?'collecting':'finished'}};await writeAtomicJSON(config.statusPath,value);});return writes;}
  return {
   status,
   async start({scope='latest40'}={}){
