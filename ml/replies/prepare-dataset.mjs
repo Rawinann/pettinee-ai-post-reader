@@ -1,7 +1,7 @@
 import {readFile,writeFile,mkdir} from 'node:fs/promises';
 import {resolve,sep} from 'node:path';
 import {pathToFileURL} from 'node:url';
-import {PETMOMMY_SYSTEM} from '../../server/petmommy.mjs';
+import {PETMOMMY_SYSTEM,commentBriefErrors} from '../../server/petmommy.mjs';
 import {checkReply} from '../../lib/workflow-policy.mjs';
 export function prepareReplyDataset(records,catalog){
  if(!Array.isArray(records))throw Error('Dataset ต้องเป็น array');
@@ -12,7 +12,7 @@ export function prepareReplyDataset(records,catalog){
   const key=row.postText.normalize('NFC').replace(/\s+/gu,' ').trim();if(seen.has(key))throw Error('โพสต์ซ้ำ ห้ามให้เคสเดียวกันปะปน train/validation');seen.add(key);
   const guides=row.guideIds.map(id=>{const g=known.get(id);if(!g)throw Error('คู่มือไม่อยู่ใน catalog');return g;});
   const target={hook:row.target.hook.trim(),info:row.target.info.trim()},prose=target.hook+'\n\n'+target.info;
-  if(/https?:|\]\s*\(|บ้านนี้|เราเคย|เคย(?:เจอ|พา|เลี้ยง)|แมวเรา/iu.test(prose)||checkReply(prose,{guides,safety:{}}).length)throw Error('คำตอบฝึกมีลิงก์ ประสบการณ์ที่ไม่ยืนยัน หรือไม่ผ่านนโยบาย');
+  if(/https?:|\]\s*\(|บ้านนี้|เราเคย|เคย(?:เจอ|พา|เลี้ยง)|แมวเรา/iu.test(prose)||checkReply(prose,{guides,safety:{}}).length||commentBriefErrors(prose,row.postText).length)throw Error('คำตอบฝึกมีลิงก์ ประสบการณ์ที่ไม่ยืนยัน หรือไม่ผ่านนโยบาย');
   const user={untrustedPost:row.postText.trim(),groundedReply:row.groundedReply.trim(),guideMetadata:guides.map(g=>({id:g.id,title:g.title,description:g.description,metadataOnly:true}))};
   if(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}|(?<!\d)0[689](?:[ -]?\d){8}(?!\d)/iu.test(JSON.stringify(user)))throw Error('พบข้อมูลติดต่อที่ต้องลบก่อน export');
   result[row.split].push({messages:[{role:'system',content:PETMOMMY_SYSTEM},{role:'user',content:JSON.stringify(user)},{role:'assistant',content:JSON.stringify(target)}]});
