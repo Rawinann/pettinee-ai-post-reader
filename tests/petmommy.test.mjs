@@ -53,3 +53,11 @@ test('generated comments use neutral krub voice and omit the stock doctor handof
  const result=await createPetmommyWriter({enabled:true,fetcher:async()=>Response.json({message:{content:JSON.stringify(output)}})}).generate(post);assert.equal(result.meta.mode,'llm');assert.doesNotMatch(result.draft,/แม่|ค่ะ|นะคะ|คุยต่อกับหมอ/);
 });
 test('a model-supplied guide teaser is not duplicated when the server appends the URL',async()=>{assert.doesNotMatch(petmommyInput(post).groundedReply,/อ่านเพิ่มได้ที่นี่/);const result=await createPetmommyWriter({enabled:true,fetcher:async()=>Response.json({message:{content:JSON.stringify({...output,info:output.info+'\n\nอ่านเพิ่มได้ที่นี่ครับ'})}})}).generate(post);assert.equal(result.meta.mode,'llm');assert.equal(result.draft.split('อ่านเพิ่มได้ที่นี่ครับ').length-1,1);});
+
+test('conversational fallback avoids report quotes and does not assume anxiety for an equipment question',async()=>{
+ const equipment={...post,text:'ขอรีวิวน้ำพุแมวหน่อยครับ',topics:classifyTopics('ขอรีวิวน้ำพุแมวหน่อยครับ')},result=await createPetmommyWriter().generate(equipment);assert.doesNotMatch(result.draft,/กังวล|จากข้อมูลที่มี|จากที่เล่าว่า|[“”]/);assert.match(result.draft,/เลือกน้ำพุ/);assert.deepEqual(checkReply(result.draft,equipment),[]);const clinical=await createPetmommyWriter().generate(post);assert.doesNotMatch(clinical.draft,/จากที่เล่าว่า|[“”]/);assert.match(clinical.draft,/5–6/);
+});
+
+test('report-like LLM output falls back instead of showing a form as a comment',async()=>{
+ for(const info of ['จากข้อมูลที่มี กรณีดังกล่าวยังมีข้อมูลที่ขาดครับ','Info: มีคู่มือให้อ่านครับ']){const result=await createPetmommyWriter({enabled:true,fetcher:async()=>Response.json({message:{content:JSON.stringify({...output,info})}})}).generate(post);assert.equal(result.meta.mode,'template');assert.doesNotMatch(result.draft,/จากข้อมูลที่มี|Info:/);}
+});

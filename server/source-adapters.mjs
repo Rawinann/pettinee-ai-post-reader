@@ -1,5 +1,5 @@
 import {createHmac,timingSafeEqual,randomUUID} from 'node:crypto';
-import {workflowError} from './workflow-store.mjs';
+import {workflowError} from './errors.mjs';
 export function secureEqual(a,b){const left=Buffer.from(String(a||'')),right=Buffer.from(String(b||''));return left.length===right.length&&left.length>0&&timingSafeEqual(left,right);}
 export function verifyMetaSignature(raw,signature,secret){if(!secret||!/^sha256=[a-f\d]{64}$/i.test(signature||''))return false;return timingSafeEqual(createHmac('sha256',secret).update(raw).digest(),Buffer.from(signature.slice(7),'hex'));}
 function text(value,name,max=10000){if(value===undefined)return '';if(typeof value!=='string'||value.length>max)throw workflowError(name+' ไม่ถูกต้อง');return value.trim();}

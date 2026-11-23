@@ -19,6 +19,8 @@ __pycache__/
 .DS_Store
 Thumbs.db
 /sites/
+/cloud-dist/
+/.vercel/
 /data/runtime/
 *.sqlite
 *.sqlite-wal

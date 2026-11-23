@@ -32,7 +32,7 @@ test('actual pipeline: new event -> original intent ML -> separate topics -> cat
 });
 test('unknown topics and no matching guide produce no invented medical explanation or source',async t=>{
  const {service}=await fixture(t);const {post}=service.ingest({sourceType:'import',externalId:'unknown',text:'อยากซื้อรถยนต์ไปเที่ยวต่างจังหวัด',authorized:true});await service.runOnce();
- const result=service.detail(post.id);assert.equal(result.topics.status,'uncertain');assert.equal(result.guides.length,0);assert.match(result.draft,/ยังไม่พบคู่มือ/);assert.doesNotMatch(result.draft,/https:\/\/|วินิจฉัยว่า/);assert.equal(result.status,'needs_review');
+ const result=service.detail(post.id);assert.equal(result.topics.status,'uncertain');assert.equal(result.guides.length,0);assert.match(result.draft,/ยังไม่(?:พบ|มี)คู่มือ/);assert.doesNotMatch(result.draft,/https:\/\/|วินิจฉัยว่า/);assert.equal(result.status,'needs_review');
  assert.equal((await service.status()).connections.group.connected,false);
 });
 test('urgent urinary wording bypasses chatbot waiting and cannot be removed during approval',async t=>{

@@ -1,0 +1,111 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {PGlite} from '@electric-sql/pglite';
+import {createServer} from 'node:http';
+import {readFile,mkdtemp,mkdir,rm} from 'node:fs/promises';
+import {resolve,join} from 'node:path';
+import {DatabaseSync} from 'node:sqlite';
+import {createCloudStore} from '../cloud/store.mjs';
+import {createCloudService,loadCloudCatalog} from '../cloud/service.mjs';
+import {createCloudAuth,passwordHash,digest} from '../cloud/auth.mjs';
+import {createCloudHTTP} from '../cloud/http.mjs';
+import {createCloudWorker} from '../cloud/worker.mjs';
+import {importSQLiteSnapshot,backupCloud,restoreCloud} from '../cloud/legacy.mjs';
+import {createWorkflowStore} from '../server/workflow-store.mjs';
+import {createPetmommyWriter} from '../server/petmommy.mjs';
+import {classifyTopics,evaluateSafety} from '../lib/workflow-policy.mjs';
+import {parseHTML} from 'linkedom';
+import {setTimeout as delay} from 'node:timers/promises';
+import {createWorkflowUI} from '../lib/workflow-ui.mjs';
+const origin='https://pettinee.example',secret='test-secret-only-'.repeat(3),tokenA='a'.repeat(43),tokenB='b'.repeat(43),group='1067156573375730';
+const catalog=await loadCloudCatalog(),guide=catalog.articles.find(g=>g.id==='cat-post-neuter-recovery-care');
+// PGlite is actual PostgreSQL in WASM, one backend. Serialize transactions here;
+// also run this SQL/claim test against a two-connection Neon staging DB before launch.
+async function fixture(t,{provision=true,browserPublish=false}={}){
+ const db=new PGlite();await db.exec(await readFile(new URL('../cloud/migrations/001-shared.sql',import.meta.url),'utf8'));let tail=Promise.resolve();
+ async function lock(){const previous=tail;let release;tail=new Promise(r=>release=r);await previous;return release;}
+ const pool={async connect(){const release=await lock();return {query:(sql,args)=>db.query(sql,args),release};},async query(sql,args){const release=await lock();try{return await db.query(sql,args);}finally{release();}}};
+ const store=createCloudStore(pool,{origin}),service=createCloudService({store,origin,secret,catalog,browserPublish});
+ if(provision)for(const [id,token,account]of [['a',tokenA,'บัญชีผู้พัฒนา'],['b',tokenB,'บัญชีพี่หมอ']])await store.provisionWorker({id,label:id,expectedAccount:account,tokenHash:digest(token),capabilities:{analyse:true,collect:true,publish:true}});
+ t.after(()=>db.close());
+ const event=n=>({sourceType:'group',externalId:group+':'+n,text:'หลังทำหมันวันที่ 5–6 แผลยังดูบวม จึงถามว่าปกติหรือไม่',url:'https://www.facebook.com/groups/'+group+'/posts/'+n+'/',publishedAt:'',authorized:true});
+ const worker=()=>store.authenticateWorker(tokenA);
+ async function ready(n=100){const p=(await service.ingest(event(n),'dev')).post;while(true){const job=await store.claim(await worker());assert.ok(job,'analysis job');const item=job.snapshot.post,topics=classifyTopics(item.text),safety=evaluateSafety(item.text,{topics,guides:[guide]}),reply=await createPetmommyWriter().generate({...item,topics,safety,guides:[guide]});const data=await service.validateAnalysis(job,{draft:reply.draft,replyMeta:reply.meta,intent:{label:'ขอข้อมูล'},guides:[guide]});await store.complete('a',job.id,job.lease_token,{status:'success',data});if(job.post_id===p.id)break;}return store.get(p.id);}
+ async function approve(p,workerId='a'){return store.approve(p.id,{revision:p.revision,acknowledged:true,workerId},'dev');}
+ return {db,pool,store,service,event,worker,ready,approve};
+}
+
+test('PostgreSQL persists source, safe analysis, short link and audit; duplicate imports create one job',async t=>{
+ const f=await fixture(t);const [a,b]=await Promise.all([f.service.ingest(f.event(1),'a'),f.service.ingest(f.event(1),'b')]);assert.equal(a.post.id,b.post.id);assert.equal([a,b].filter(r=>r.duplicate).length,1);assert.equal((await f.store.stats()).total,1);assert.equal(Number((await f.pool.query('SELECT count(*) AS n FROM pettinee_jobs')).rows[0].n),1);
+ const job=await f.store.claim(await f.worker());assert.equal(job.kind,'analyse');await assert.rejects(f.store.complete('b',job.id,job.lease_token,{status:'failed'}),/lease/);await f.store.complete('a',job.id,job.lease_token,{status:'failed'});assert.equal((await f.store.get(a.post.id)).status,'error');
+ const p=await f.ready(2),reopened=createCloudStore(f.pool,{origin});assert.match(p.draft,/https:\/\/pettinee.example\/g\/[A-Za-z0-9_-]{12}/);assert.equal((await reopened.get(p.id)).draft,p.draft);assert.ok((await reopened.detail(p.id)).history.length>=2);
+});
+
+test('concurrent draft updates use revision; an edit or sender change invalidates the old confirmation',async t=>{
+ const f=await fixture(t),p=await f.ready();await f.approve(p);const results=await Promise.allSettled([f.store.edit(p.id,{revision:p.revision,text:p.draft+'\nขอบคุณครับ'},'a'),f.store.edit(p.id,{revision:p.revision,text:p.draft+'\nลองอ่านดูครับ'},'b')]);assert.equal(results.filter(r=>r.status==='fulfilled').length,1);const updated=await f.store.get(p.id);assert.equal(updated.approvedRevision,null);assert.equal(updated.revision,p.revision+1);await assert.rejects(f.store.enqueue(p.id,{revision:updated.revision,workerId:'a'},'a'),/ผู้ส่งหรือร่าง/);await f.approve(updated,'a');await assert.rejects(f.service.preview(p.id,{revision:updated.revision,workerId:'b'},'a'),/ผู้ส่ง/);await f.approve(updated,'b');assert.equal((await f.store.get(p.id)).approvedWorkerId,'b');
+});
+
+test('manual publish never becomes a browser job and copying does not count as published',async t=>{
+ const f=await fixture(t),p=await f.ready();await f.approve(p,'b');const ticket=await f.service.preview(p.id,{revision:p.revision,workerId:'b'},'doctor');const body={ticketId:ticket.ticketId,revision:p.revision,confirmed:true};const [a,b]=await Promise.all([f.service.send(p.id,body,'doctor'),f.service.send(p.id,body,'doctor')]);assert.equal(a.jobId,b.jobId);assert.equal(a.mode,'manual');assert.equal(a.published,false);assert.equal(await f.store.claim(await f.store.authenticateWorker(tokenB)),null);assert.equal((await f.store.get(p.id)).status,'publishing');await assert.rejects(f.store.manual(p.id,{revision:p.revision,confirmed:false},'doctor'),/ยืนยัน/);await f.store.manual(p.id,{revision:p.revision,confirmed:true},'doctor');assert.equal((await f.store.get(p.id)).status,'published');assert.equal((await f.store.stats()).counts.published,1);const receipt=(await f.store.detail(p.id)).publication.info;assert.equal(receipt.account,undefined);assert.equal(receipt.expectedAccount,'บัญชีพี่หมอ');
+});
+
+test('worker A cannot claim B; offline jobs survive; duplicate requests create one browser job',async t=>{
+ const f=await fixture(t,{browserPublish:true}),p=await f.ready();await f.approve(p,'b');const ticket=await f.service.preview(p.id,{revision:p.revision,workerId:'b'},'doctor');const send=()=>f.service.send(p.id,{ticketId:ticket.ticketId,revision:p.revision,confirmed:true},'doctor');const results=await Promise.all([send(),send()]);assert.equal(results[0].jobId,results[1].jobId);assert.equal(await f.store.claim(await f.worker()),null);const workerB=await f.store.authenticateWorker(tokenB),job=await f.store.claim(workerB);assert.equal(job.worker_id,'b');assert.equal(job.snapshot.expectedAccount,'บัญชีพี่หมอ');await assert.rejects(f.store.renew('a',job.id,job.lease_token),/lease/);assert.equal(await f.store.claim(workerB),null);
+});
+
+test('expired send lease becomes Needs Verification; no retry until a person checks the original post',async t=>{
+ const f=await fixture(t,{browserPublish:true}),p=await f.ready();await f.approve(p);await f.store.enqueue(p.id,{revision:p.revision,workerId:'a',mode:'browser'},'a');const job=await f.store.claim(await f.worker());await f.pool.query("UPDATE pettinee_jobs SET lease_until=now()-interval '1 second' WHERE id=$1",[job.id]);await f.store.stats();assert.equal((await f.store.get(p.id)).status,'publish_unknown');assert.equal(await f.store.claim(await f.worker()),null);await assert.rejects(f.store.complete('a',job.id,job.lease_token,{status:'success',data:{id:'12'}}),/lease/);await f.store.reconcile(p.id,{revision:p.revision,confirmed:true,found:false},'doctor');await f.store.enqueue(p.id,{revision:p.revision,workerId:'a',mode:'browser'},'doctor');assert.ok(await f.store.claim(await f.worker()));
+});
+
+test('expired analysis lease can be reclaimed, while old result and wrong token are rejected',async t=>{
+ const f=await fixture(t);const p=(await f.service.ingest(f.event(1),'a')).post;const first=await f.store.claim(await f.worker());await f.pool.query("UPDATE pettinee_jobs SET lease_until=now()-interval '1 second' WHERE id=$1",[first.id]);const next=await f.store.claim(await f.store.authenticateWorker(tokenB));assert.equal(next.id,first.id);assert.notEqual(next.lease_token,first.lease_token);assert.equal(next.worker_id,'b');await assert.rejects(f.store.complete('a',first.id,first.lease_token,{status:'failed'}),/lease/);assert.equal((await f.store.get(p.id)).status,'processing');
+});
+
+test('heartbeat reports offline/online without accepting a new configured account or publishing permission',async t=>{
+ const f=await fixture(t);assert.equal((await f.store.workers())[0].online,false);await f.store.heartbeat('a',{account:'บัญชีอื่น',browserOpen:true,expectedAccount:'evil',publish:true});const [w]=await f.store.workers();assert.equal(w.online,true);assert.equal(w.expectedAccount,'บัญชีผู้พัฒนา');await f.pool.query("UPDATE pettinee_workers SET last_seen=now()-interval '3 minutes'");assert.equal((await f.store.workers())[0].online,false);await assert.rejects(f.store.authenticateWorker('x'.repeat(43)),/token/);
+});
+
+test('server rejects invented guide metadata and unsafe generated reply instead of displaying it',async t=>{
+ const f=await fixture(t),p=(await f.service.ingest(f.event(1),'a')).post,job=await f.store.claim(await f.worker());await assert.rejects(f.service.validateAnalysis(job,{guides:[{id:guide.id,url:'https://evil.test'}],draft:'อ่านเพิ่มครับ'}),/catalog/);await assert.rejects(f.service.validateAnalysis(job,{guides:[guide],draft:'ให้กินยา 5 mg ครับ'}),/ยา|ขนาด/);assert.equal((await f.store.get(p.id)).draft,'');
+});
+
+test('secure two-user sessions expire, reject tampering and invalid origins; login attempts are persisted',async t=>{
+ const f=await fixture(t);let now=Date.now();const users=[{email:'dev@example.org',passwordHash:passwordHash('long-test-password-123')}],auth=createCloudAuth({store:f.store,secret,users,origin,clock:()=>now}),req={headers:{origin,'x-forwarded-for':'127.0.0.1'}};await assert.rejects(auth.login(req,{email:'dev@example.org',password:'wrong'}),/อีเมล/);const login=await auth.login(req,{email:'dev@example.org',password:'long-test-password-123'});assert.match(login.cookie,/HttpOnly/);assert.match(login.cookie,/Secure/);assert.match(login.cookie,/SameSite=Strict/);const cookie=login.cookie.split(';')[0];assert.equal(auth.user({headers:{cookie}}).email,'dev@example.org');assert.throws(()=>auth.user({headers:{cookie:cookie+'x'}}),/เข้าสู่ระบบ/);assert.throws(()=>auth.checkOrigin({headers:{origin:'https://evil.test'}}),/Origin/);now+=28800001;assert.throws(()=>auth.user({headers:{cookie}}),/เข้าสู่ระบบ/);for(let i=0;i<9;i++)await auth.login(req,{email:'other@example.org',password:'wrong'}).catch(()=>{});await assert.rejects(auth.login(req,{email:'other@example.org',password:'wrong'}),e=>e.statusCode===429);
+});
+
+test('HTTP protects dashboard APIs, isolates worker tokens, validates import and exposes only public guide landing',async t=>{
+ const f=await fixture(t),auth=createCloudAuth({store:f.store,secret,users:[{email:'dev@example.org',passwordHash:passwordHash('long-test-password-123')}],origin}),server=createServer(createCloudHTTP({store:f.store,service:f.service,auth}));await new Promise(r=>server.listen(0,'127.0.0.1',r));t.after(()=>new Promise(r=>server.close(r)));const base='http://127.0.0.1:'+server.address().port;
+ assert.equal((await fetch(base+'/api/workflow/status')).status,401);assert.equal((await fetch(base+'/api/workflow/posts',{headers:{Authorization:'Bearer '+tokenA}})).status,401);
+ const login=await fetch(base+'/api/auth/login',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:JSON.stringify({email:'dev@example.org',password:'long-test-password-123'})});const cookie=login.headers.get('set-cookie').split(';')[0],post=(path,b,headers={})=>fetch(base+path,{method:'POST',headers:{Cookie:cookie,Origin:origin,'Content-Type':'application/json',...headers},body:JSON.stringify(b)});
+ assert.equal((await fetch(base+'/api/workflow/status',{headers:{Cookie:cookie}})).status,200);assert.equal((await post('/api/worker/claim',{})).status,401);assert.equal((await post('/api/workflow/import',{authorized:true,posts:[f.event(1)]},{Origin:'https://evil.test'})).status,403);assert.equal((await post('/api/workflow/import',{authorized:false,posts:[f.event(1)]})).status,400);assert.equal((await post('/api/workflow/import',{authorized:true,posts:[f.event(1)]})).status,200);
+ const heartbeat=await post('/api/worker/heartbeat',{account:'บัญชีผู้พัฒนา'},{Authorization:'Bearer '+tokenA});assert.equal(heartbeat.status,200);
+ const p=await f.ready(2),token=p.replyMeta.links[0].token;assert.equal((await fetch(base+'/g/'+token,{method:'HEAD'})).status,200);assert.equal((await f.store.tracking()).pageViews,0);const landing=await fetch(base+'/g/'+token);assert.doesNotMatch(await landing.text(),/หลังทำหมันวันที่ 5|facebook.com\/groups/);assert.equal((await fetch(base+'/g/'+token+'/open')).status,405);const redirect=await fetch(base+'/g/'+token+'/open',{method:'POST',redirect:'manual'});assert.equal(redirect.status,303);assert.ok(redirect.headers.get('location').startsWith(guide.url));assert.equal((await f.store.tracking()).clicks,1);assert.equal((await fetch(base+'/g/not-a-valid-token')).status,401);
+});
+
+test('SQLite migration preserves all original workflow rows, drafts and history; rerun never overwrites cloud edits',async t=>{
+ const f=await fixture(t),parent=resolve('tmp');await mkdir(parent,{recursive:true});const dir=await mkdtemp(join(parent,'cloud-migrate-')),path=join(dir,'old.sqlite');t.after(()=>rm(dir,{recursive:true,force:true}));const old=createWorkflowStore(path);old.ingest({sourceType:'import',externalId:'legacy1',text:'ข้อความเดิม',url:'',publishedAt:'',sourceMeta:{}});old.close();const db=new DatabaseSync(path,{readOnly:true}),snapshot={};for(const {name}of db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'workflow_%' ORDER BY name").all())snapshot[name]=db.prepare('SELECT * FROM '+name).all();db.close();const result=await importSQLiteSnapshot(f.pool,snapshot);assert.equal(result.posts,1);assert.equal(result.archived,Object.values(snapshot).reduce((n,r)=>n+r.length,0));const id=snapshot.workflow_posts[0].id;assert.equal((await f.store.get(id)).text,'ข้อความเดิม');const audit=await f.store.detail(id);assert.equal(audit.history.length,snapshot.workflow_audit.length);assert.equal((await importSQLiteSnapshot(f.pool,snapshot)).skipped,true);assert.equal((await f.store.stats()).total,1);const check=new DatabaseSync(path,{readOnly:true});try{assert.equal(check.prepare('SELECT count(*) AS n FROM workflow_posts').get().n,1);}finally{check.close();}
+});
+
+test('backup restores a fresh PostgreSQL store with jobs and audit; refuses to overwrite existing data',async t=>{
+ const a=await fixture(t),p=await a.ready();await a.approve(p);const backup=JSON.parse(JSON.stringify(await backupCloud(a.pool))),b=await fixture(t,{provision:false});assert.equal((await restoreCloud(b.pool,backup)).restored,true);assert.equal((await b.store.get(p.id)).draft,p.draft);assert.equal((await b.store.workers())[0].online,false);assert.equal((await b.store.detail(p.id)).history.length,(await a.store.detail(p.id)).history.length);await assert.rejects(restoreCloud(b.pool,backup),/ฐานที่ว่าง/);
+});
+
+test('worker publishes only after explicit queueing and account match; lost HTTP result never repeats Chrome send',async()=>{
+ const p={id:'post',sourceType:'group',revision:1,approvedRevision:1,approvedWorkerId:'a',expectedAccount:'บัญชีผู้พัฒนา',draft:'ลองอ่านคู่มือนี้ครับ\n'+guide.url,guides:[guide],safety:{urgent:false},mode:'browser'},job={id:'job',kind:'publish',worker_id:'a',lease_token:'lease',snapshot:p};let sends=0,claims=0,completions=0,journal=null;
+ const worker=createCloudWorker({workerId:'a',expectedAccount:'บัญชีผู้พัฒนา',publishEnabled:true,publisher:{status:()=>({}),prepare:async()=>({account:'บัญชีผู้พัฒนา'}),send:async()=>{sends++;return {id:'123'};}},request:async(path)=>{if(path.endsWith('/claim')){claims++;return {job};}if(path.endsWith('/complete')){completions++;if(completions===1)throw Error('network');}return {};},journal:async x=>journal=x,loadJournal:async()=>null});await assert.rejects(worker.tick(),/network/);assert.equal(sends,1);assert.ok(journal);await worker.tick();assert.equal(sends,1);assert.equal(claims,1);assert.equal(completions,2);assert.equal(journal,null);
+});
+
+test('worker rejects wrong Facebook account and disabled browser mode without clicking send',async()=>{
+ for(const publishEnabled of [false,true]){let sends=0,result;const worker=createCloudWorker({workerId:'b',expectedAccount:'บัญชีพี่หมอ',publishEnabled,publisher:{status:()=>({}),prepare:async()=>({account:'บัญชีผู้พัฒนา'}),send:async()=>{sends++;}},request:async(path,body)=>{if(path.endsWith('/claim'))return {job:{id:'job',worker_id:'b',kind:'publish',lease_token:'token',snapshot:{mode:'browser',expectedAccount:'บัญชีพี่หมอ',revision:1,approvedRevision:1,approvedWorkerId:'b',draft:'ข้อมูลครับ',guides:[],safety:{}}}};if(path.endsWith('/complete'))result=body;return {};}});await worker.tick();assert.equal(sends,0);assert.equal(result.status,'failed');}
+});
+
+test('shared Dashboard saves an edit while workers are offline and supports manual reply without a false send receipt',async t=>{
+ const f=await fixture(t),p=await f.ready(),auth=createCloudAuth({store:f.store,secret,users:[{email:'dev@example.org',passwordHash:passwordHash('long-test-password-123')}],origin}),server=createServer(createCloudHTTP({store:f.store,service:f.service,auth}));await new Promise(r=>server.listen(0,'127.0.0.1',r));const login=await auth.login({headers:{origin}},{email:'dev@example.org',password:'long-test-password-123'}),cookie=login.cookie.split(';')[0],base='http://127.0.0.1:'+server.address().port,originalFetch=globalThis.fetch;
+ const {document,window}=parseHTML('<html><body><main id="workspace"></main></body></html>'),previous=new Map(),writes=[],popups=[];for(const [key,value]of Object.entries({document,window,navigator:{clipboard:{writeText:async text=>writes.push(text)}},fetch:(path,options={})=>originalFetch(base+path,{...options,headers:{...options.headers,Cookie:cookie,Origin:origin}})})){previous.set(key,Object.getOwnPropertyDescriptor(globalThis,key));Object.defineProperty(globalThis,key,{configurable:true,writable:true,value});}
+ window.HTMLElement.prototype.showModal=function(){this.setAttribute('open','');};window.HTMLElement.prototype.close=function(){this.removeAttribute('open');};window.open=()=>{const popup={opener:null,location:{href:''},close(){}};popups.push(popup);return popup;};let view='dashboard',ui;const host={workspace:document.getElementById('workspace'),isActive:()=>true,currentView:()=>view,notify(){},go:next=>{view=next;return next==='inbox'?ui.showInbox():ui.showDashboard();}};ui=createWorkflowUI(host);
+ t.after(async()=>{ui.stop();await new Promise(r=>server.close(r));for(const [key,d]of previous)d?Object.defineProperty(globalThis,key,d):delete globalThis[key];});
+ async function waitFor(fn){for(let n=0;n<400;n++){if(await fn())return;await delay(10);}assert.fail('Timed out: Cloud UI');}
+ const click=selector=>{const b=document.querySelector(selector);assert.ok(b,selector);b.dispatchEvent(new window.Event('click',{bubbles:true}));};
+ await ui.showDashboard();assert.match(document.body.textContent,/ออฟไลน์/);assert.equal(document.querySelector('#reply-browser-panel'),null);await host.go('inbox');click('[data-wf-post]');await waitFor(()=>document.getElementById('wf-draft'));ui.stop();const field=document.getElementById('wf-draft');field.value+='\nลองอ่านประกอบก่อนได้ครับ';field.dispatchEvent(new window.Event('input',{bubbles:true}));const expected=field.value;await waitFor(()=>document.getElementById('wf-message').textContent==='บันทึกร่างแล้ว');assert.equal((await f.store.get(p.id)).draft,expected);assert.equal((await f.store.get(p.id)).approvedRevision,null);
+ click('[data-comment-action="send-live"]');await waitFor(()=>document.querySelector('[data-comment-action="manual-confirm"]'));await waitFor(()=>document.getElementById('wf-message').textContent.includes('วางและกดส่ง'));assert.equal(writes[0],expected);assert.equal(popups[0].location.href,p.url);assert.equal((await f.store.get(p.id)).status,'publishing');assert.equal(document.querySelector('#wf-detail .pill').textContent,'รอตอบบน Facebook');click('[data-comment-action="manual-confirm"]');await waitFor(()=>document.getElementById('wf-message').textContent==='บันทึกว่าตอบด้วยมือแล้ว');assert.equal((await f.store.get(p.id)).status,'published');assert.match(document.querySelector('#wf-detail').textContent,/ยืนยันโดยผู้ดูแล/);document.body.dataset.cloud='true';globalThis.fetch=async()=>Response.json({error:'กรุณาเข้าสู่ระบบ'},{status:401});await ui.showDashboard();assert.equal(document.getElementById('wf-token'),null);assert.equal(document.getElementById('wf-draft').value,expected);assert.match(document.getElementById('wf-message').textContent,/เซสชันหมดอายุ/);
+});

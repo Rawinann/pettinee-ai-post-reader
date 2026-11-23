@@ -2,7 +2,8 @@ import {DatabaseSync} from 'node:sqlite';
 import {mkdirSync} from 'node:fs';
 import {dirname} from 'node:path';
 import {randomUUID,createHash} from 'node:crypto';
-export const workflowError=(message,statusCode=400)=>Object.assign(Error(message),{statusCode});
+export {workflowError} from './errors.mjs';
+import {workflowError} from './errors.mjs';
 const hash=value=>createHash('sha256').update(value).digest('hex');
 const decode=row=>row?{id:row.id,sourceType:row.source_type,externalId:row.external_id,url:row.source_url,text:row.text,publishedAt:row.published_at,receivedAt:row.received_at,status:row.status,stage:row.stage,intent:JSON.parse(row.intent_json),topics:JSON.parse(row.topics_json),guides:JSON.parse(row.guides_json),safety:JSON.parse(row.safety_json),sourceMeta:JSON.parse(row.source_meta_json||'{}'),draft:row.draft,revision:row.revision,approvedRevision:row.approved_revision,lastError:row.last_error,processingMs:row.processing_ms,updatedAt:row.updated_at}:null;
 export function createWorkflowStore(path,{clock=Date.now,maxAttempts=3,leaseMs=120000,retryBaseMs=1000}={}){

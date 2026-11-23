@@ -1,0 +1,19 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "buildCommand": "npm run build:cloud",
+  "outputDirectory": "cloud-dist",
+  "functions": {"api/index.mjs": {"maxDuration": 30,"includeFiles": "data/guides/catalog.json","excludeFiles": "{data/runtime/**,data/*.xlsx,models/**,tests/**,sites/**,automation/**,ml/**}"}},
+  "rewrites": [
+    {"source": "/api/:path*", "destination": "/api/index?route=/api/:path*"},
+    {"source": "/g/:token/open", "destination": "/api/index?route=/g/:token/open"},
+    {"source": "/g/:token", "destination": "/api/index?route=/g/:token"},
+    {"source": "/r/g/:token/open", "destination": "/api/index?route=/r/g/:token/open"},
+    {"source": "/r/g/:token", "destination": "/api/index?route=/r/g/:token"}
+  ],
+  "headers": [{"source": "/(.*)","headers": [
+    {"key": "X-Content-Type-Options", "value": "nosniff"},
+    {"key": "Referrer-Policy", "value": "no-referrer"},
+    {"key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"}
+  ]}]
+}

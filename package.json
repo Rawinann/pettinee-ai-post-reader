@@ -13,23 +13,40 @@
     "guides:sync": "node guides/sync.mjs",
     "guides:download": "node guides/download_encoder.mjs",
     "guides:index": "node guides/build_index.mjs",
-    "check": "node --check server.mjs && node --check app.mjs && node --check lib/care.mjs && node --check lib/experience-ui.mjs && node --check lib/intent.mjs && node --check lib/intent-ui.mjs && node --check server/intent.mjs && node --check lib/guide-match.mjs && node --check lib/guide-ui.mjs && node --check server/guides.mjs && node --check guides/encoder.mjs && node --check guides/sync.mjs && node --check guides/download_encoder.mjs && node --check guides/build_index.mjs && node --check lib/workflow-policy.mjs && node --check lib/workflow-ui.mjs && node --check server/workflow-store.mjs && node --check server/source-adapters.mjs && node --check server/workflow.mjs && node --check server/workflow-http.mjs && node --check automation/config.mjs && node --check automation/extract.mjs && node --check automation/browser.mjs && node --check automation/outbox.mjs && node --check automation/run.mjs && node --check server/collector-status.mjs && node --check automation/navigation.mjs && node --check automation/batch.mjs && node --check automation/batch-report.mjs && node --check lib/comment-ui.mjs && node --check server/comment-delivery.mjs && node --check automation/comment-dom.mjs && node --check automation/comment-driver.mjs && node --check server/petmommy.mjs && node --check server/guide-tracking.mjs && node --check server/guide-landing.mjs && node --check ml/replies/prepare-dataset.mjs && node --check server/dashboard-collector.mjs && node --check lib/collection-ui.mjs",
+    "check": "node --check server.mjs && node --check app.mjs && node --check lib/care.mjs && node --check lib/experience-ui.mjs && node --check lib/intent.mjs && node --check lib/intent-ui.mjs && node --check server/intent.mjs && node --check lib/guide-match.mjs && node --check lib/guide-ui.mjs && node --check server/guides.mjs && node --check guides/encoder.mjs && node --check guides/sync.mjs && node --check guides/download_encoder.mjs && node --check guides/build_index.mjs && node --check lib/workflow-policy.mjs && node --check lib/workflow-ui.mjs && node --check server/workflow-store.mjs && node --check server/source-adapters.mjs && node --check server/workflow.mjs && node --check server/workflow-http.mjs && node --check automation/config.mjs && node --check automation/extract.mjs && node --check automation/browser.mjs && node --check automation/outbox.mjs && node --check automation/run.mjs && node --check server/collector-status.mjs && node --check automation/navigation.mjs && node --check automation/batch.mjs && node --check automation/batch-report.mjs && node --check lib/comment-ui.mjs && node --check server/comment-delivery.mjs && node --check automation/comment-dom.mjs && node --check automation/comment-driver.mjs && node --check server/petmommy.mjs && node --check server/guide-tracking.mjs && node --check server/guide-landing.mjs && node --check ml/replies/prepare-dataset.mjs && node --check server/dashboard-collector.mjs && node --check lib/collection-ui.mjs && node --check cloud/store.mjs && node --check cloud/service.mjs && node --check cloud/http.mjs && node --check cloud/auth.mjs && node --check cloud/worker.mjs && node --check api/index.mjs && node --check cloud/entry.mjs && node --check cloud/manage.mjs && node --check cloud/legacy.mjs && node --check cloud/dev.mjs && node --check hosting/build-cloud.mjs",
     "automate": "node --env-file-if-exists=.env automation/run.mjs",
     "automate:login": "node --env-file-if-exists=.env automation/run.mjs --login",
     "automate:batch": "node --env-file-if-exists=.env automation/run.mjs --batch",
     "replies": "node --env-file-if-exists=.env server.mjs --reply-server",
     "replies:live": "node --env-file-if-exists=.env server.mjs --reply-server --browser-replies",
     "replies:ai": "node --env-file-if-exists=.env server.mjs --reply-server --browser-replies --petmommy-ai",
-    "prepare:reply-training": "node ml/replies/prepare-dataset.mjs"
+    "prepare:reply-training": "node ml/replies/prepare-dataset.mjs",
+    "build:cloud": "node hosting/build-cloud.mjs",
+    "cloud:migrate": "node --env-file-if-exists=.env.cloud cloud/manage.mjs migrate",
+    "cloud:import-sqlite": "node --env-file-if-exists=.env.cloud cloud/manage.mjs import-sqlite",
+    "cloud:user": "node --env-file-if-exists=.env.cloud cloud/manage.mjs user",
+    "cloud:worker-register": "node --env-file-if-exists=.env.cloud cloud/manage.mjs worker",
+    "cloud:backup": "node --env-file-if-exists=.env.cloud cloud/manage.mjs backup",
+    "cloud:restore": "node --env-file-if-exists=.env.cloud cloud/manage.mjs restore",
+    "cloud:worker": "node --env-file-if-exists=.env.worker cloud/worker.mjs",
+    "cloud:dev": "node --env-file-if-exists=.env.cloud cloud/dev.mjs",
+    "cloud:test-postgres": "node --env-file-if-exists=.env.cloud --test tests/cloud-postgres.integration.mjs"
   },
   "engines": {
     "node": ">=22.13"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.17",
     "linkedom": "0.18.12"
   },
   "dependencies": {
     "@huggingface/transformers": "3.8.1",
+    "pg": "^8.23.1",
     "playwright-core": "1.65.1"
+  },
+  "overrides": {
+    "@huggingface/transformers": {
+      "sharp": "0.35.5"
+    }
   }
 }
