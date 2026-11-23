@@ -10,11 +10,12 @@ import {parseHTML} from 'linkedom';
 import {createWorkflowUI} from '../lib/workflow-ui.mjs';
 import {createAppServer} from '../server.mjs';
 import {encoder} from '../guides/encoder.mjs';
+import {createPetmommyWriter} from '../server/petmommy.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url));
 async function waitFor(fn,label){for(let i=0;i<500;i++){if(fn())return;await delay(10);}assert.fail('Timed out: '+label);}
-async function boot(t,{backend=true,browserPublisher=null}={}){
+async function boot(t,{backend=true,browserPublisher=null,replyWriter=null}={}){
  const parent=resolve(root,'tmp');await mkdir(parent,{recursive:true});const dir=await mkdtemp(join(parent,'workflow-ui-'));
- const server=backend?createAppServer({workflowOptions:{dbPath:join(dir,'queue.sqlite'),autoRun:false,browserPublisher}}):null;
+ const server=backend?createAppServer({workflowOptions:{dbPath:join(dir,'queue.sqlite'),autoRun:false,browserPublisher,replyWriter}}):null;
  if(server)await new Promise(r=>server.listen(0,'127.0.0.1',r));
  // Initialize native ONNX before installing browser globals for the DOM double.
  if(server)await encoder();
@@ -39,7 +40,7 @@ test('Dashboard -> real mock ingestion -> Inbox -> edit -> approval -> clipboard
  await b.server.workflow.runOnce();await b.host.go('inbox');b.click('[data-wf-post]');await waitFor(()=>b.document.querySelector('#wf-draft')?.value?.includes('cat-post-neuter-recovery-care'),'actual guide draft').catch(e=>{assert.fail(e.message+' '+JSON.stringify({post:b.server.workflow.list().posts[0],dom:b.document.body.textContent}));});b.ui.stop();
  assert.equal(b.document.querySelector('[data-wf-action="copy"]').disabled,true);assert.equal(b.document.querySelector('[data-wf-action="publish"]'),null);
  const draft=b.document.querySelector('#wf-draft');draft.value+='\nขอบคุณที่เล่าให้ฟังนะคะ';draft.dispatchEvent(new b.window.Event('input',{bubbles:true}));
- assert.equal(b.document.querySelector('#wf-approve').disabled,true);b.click('[data-wf-action="save"]');await waitFor(()=>b.server.workflow.list().posts[0].revision===2,'saved edit');await waitFor(()=>b.document.querySelector('#wf-approve')?.disabled===false,'refreshed draft');
+ assert.equal(b.document.querySelector('#wf-approve').disabled,true);b.click('[data-wf-action="save"]');await waitFor(()=>b.server.workflow.list().posts[0].revision===2,'saved edit');await waitFor(()=>b.document.querySelector('#wf-approve')?.disabled===false,'refreshed draft').catch(e=>assert.fail(e.message+' '+JSON.stringify(b.server.workflow.detail(b.server.workflow.list().posts[0].id))));
  b.document.querySelector('#wf-ack').checked=true;b.click('[data-wf-action="approve"]');await waitFor(()=>b.document.querySelector('[data-wf-action="copy"]')?.disabled===false,'approved state').catch(e=>assert.fail(e.message+' '+b.document.getElementById('wf-message').textContent+' / '+JSON.stringify(b.server.workflow.list().posts[0])));
  b.click('[data-wf-action="copy"]');await waitFor(()=>b.writes.length===1,'clipboard');assert.match(b.writes[0],/ขอบคุณที่เล่าให้ฟัง/);assert.equal(b.server.workflow.list().posts[0].status,'approved');
  b.click('[data-wf-action="handoff"]');assert.equal(b.handoffs.length,1);b.click('[data-wf-action="manual"]');await waitFor(()=>b.server.workflow.list({status:'done'}).total===1,'operator confirmed manual reply');await waitFor(()=>b.document.querySelector('#wf-detail .pill')?.textContent==='ตอบแล้ว','publication displayed in Inbox');
@@ -69,4 +70,13 @@ test('one explicit Dashboard click sends the approved reply through HTTP without
  assert.equal(b.document.querySelector('[data-comment-action="send-live"]'),null);
  b.document.querySelector('#wf-ack').checked=true;b.click('[data-wf-action="approve"]');await waitFor(()=>b.document.querySelector('[data-comment-action="send-live"]'),'live button');assert.equal(sends,0);
  b.click('[data-comment-action="send-live"]');b.click('[data-comment-action="send-live"]');await waitFor(()=>b.document.querySelector('#wf-detail .pill')?.textContent==='ตอบแล้ว','visible receipt rendered');assert.equal(sends,1);assert.equal(b.writes.length,0);assert.equal(b.document.querySelector('#comment-send-dialog'),null);assert.equal(b.document.querySelector('#wf-detail img'),null);assert.match(b.document.querySelector('#wf-detail').textContent,/<img/);assert.equal(b.server.workflow.detail(b.server.workflow.list().posts[0].id).publication.method,'browser-ui');
+});
+test('PetMommy API rewrite sends only the admin-reviewed text and invalidates the previous approval',async t=>{
+ let calls=0,payload;const replyWriter=createPetmommyWriter({enabled:true,provider:'openai',apiKey:'test-only',fetcher:async(url,options)=>{calls++;payload=JSON.parse(JSON.parse(options.body).input[1].content);return Response.json({output:[{type:'message',role:'assistant',content:[{type:'output_text',text:JSON.stringify({hook:'เห็นแผลยังบวม ก็อดห่วงน้องไม่ได้เลยนะคะ',info:'จากข้อความอย่างเดียวยังบอกสาเหตุไม่ได้ค่ะ ลองเล่าให้หมอที่ดูแลฟังนะคะ'})}]}]});}});
+ const b=await boot(t,{replyWriter});b.server.workflow.ingest({sourceType:'import',authorized:true,externalId:'redaction-test',text:'หลังทำหมันแผลยังบวม สอบถามที่ 0812345678'});await b.server.workflow.runOnce();assert.equal(calls,0);await b.host.go('inbox');b.click('[data-wf-post]');await waitFor(()=>b.document.querySelector('#wf-ai-text'),'review input');b.ui.stop();
+ b.document.querySelector('#wf-ack').checked=true;b.click('[data-wf-action="approve"]');await waitFor(()=>b.document.querySelector('[data-comment-action="send-demo"]'),'approved');
+ b.click('[data-wf-action="rewrite"]');await waitFor(()=>b.document.getElementById('wf-message').textContent.includes('ตรวจและลบข้อมูล'),'consent gate');assert.equal(calls,0);
+ b.document.querySelector('#wf-ai-text').value='หลังทำหมันแผลยังบวม อยากหาข้อมูลเพิ่มเติม';b.document.querySelector('#wf-ai-ack').checked=true;b.click('[data-wf-action="rewrite"]');await waitFor(()=>b.document.querySelector('#wf-draft')?.value.includes('เห็นแผลยังบวม'),'LLM result');
+ assert.equal(calls,1);assert.doesNotMatch(JSON.stringify(payload),/0812345678/);const p=b.server.workflow.list().posts[0];assert.equal(p.approvedRevision,null);assert.equal(p.replyMeta.mode,'llm');assert.match(p.text,/0812345678/);assert.equal(b.document.querySelector('[data-comment-action="send-live"]'),null);assert.equal(b.document.querySelector('[data-wf-action="copy"]').disabled,true);
+ await b.ui.showDashboard();b.ui.stop();assert.match(b.document.body.textContent,/เปิดหน้าคู่มือของเรา/);assert.match(b.document.body.textContent,/ไม่ใช่คนไม่ซ้ำ/);
 });

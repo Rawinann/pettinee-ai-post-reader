@@ -1,0 +1,10 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {prepareReplyDataset} from '../ml/replies/prepare-dataset.mjs';
+const catalog=JSON.parse(await readFile(new URL('../data/guides/catalog.json',import.meta.url),'utf8'));
+const records=JSON.parse(await readFile(new URL('../ml/replies/curation.example.json',import.meta.url),'utf8'));
+const reviewed=()=>records.map(r=>({...r,reviewedForTraining:true,rightsConfirmed:true,personalDataRemoved:true}));
+test('synthetic examples are not silently promoted into reviewed training data',()=>{const result=prepareReplyDataset(records,catalog);assert.equal(result.train.length,0);assert.equal(result.validation.length,0);assert.equal(result.skipped,2);});
+test('explicitly reviewed pairs export conversational JSONL targets matching the runtime JSON format',()=>{const result=prepareReplyDataset(reviewed(),catalog);assert.equal(result.train.length,1);assert.equal(result.validation.length,1);const messages=result.train[0].messages;assert.deepEqual(messages.map(m=>m.role),['system','user','assistant']);assert.deepEqual(Object.keys(JSON.parse(messages[2].content)),['hook','info']);assert.doesNotMatch(messages[1].content,/facebook.com|externalId/);});
+test('dataset rejects duplicate cases across splits, unknown guides, private contacts and invented experience',()=>{let rows=reviewed();rows[1].postText=rows[0].postText;assert.throws(()=>prepareReplyDataset(rows,catalog),/โพสต์ซ้ำ/);rows=reviewed();rows[0].guideIds=['fake'];assert.throws(()=>prepareReplyDataset(rows,catalog),/catalog/);rows=reviewed();rows[0].postText+=' โทร 0812345678';assert.throws(()=>prepareReplyDataset(rows,catalog),/ข้อมูลติดต่อ/);rows=reviewed();rows[0].target={hook:'บ้านนี้เคยพาไปหาหมอค่ะ',info:'ปรึกษาหมอนะคะ'};assert.throws(()=>prepareReplyDataset(rows,catalog),/ประสบการณ์/);});

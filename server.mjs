@@ -9,6 +9,8 @@ import { createWorkflowService } from './server/workflow.mjs';
 import { createWorkflowHTTP } from './server/workflow-http.mjs';
 import {createBrowserCommentPublisher} from './automation/comment-driver.mjs';
 import {collectorConfig} from './automation/config.mjs';
+import {createPetmommyWriter} from './server/petmommy.mjs';
+import {guideLanding} from './server/guide-landing.mjs';
 
 const projectDir = dirname(fileURLToPath(import.meta.url));
 const files = new Map([
@@ -17,6 +19,7 @@ const files = new Map([
   ['/app.mjs', ['app.mjs', 'text/javascript; charset=utf-8']],
   ['/styles.css', ['styles.css', 'text/css; charset=utf-8']],
   ['/workflow.css', ['workflow.css', 'text/css; charset=utf-8']],
+  ['/guide-landing.css', ['guide-landing.css', 'text/css; charset=utf-8']],
   ['/config.js', ['config.js', 'text/javascript; charset=utf-8']],
   ['/lib/import.mjs', ['lib/import.mjs', 'text/javascript; charset=utf-8']],
   ['/lib/analysis.mjs', ['lib/analysis.mjs', 'text/javascript; charset=utf-8']],
@@ -130,6 +133,17 @@ export function createAppServer({ provider = null, rootDir = projectDir, maxBody
       }
       if (pathname.includes('\\') || pathname.includes('\0')) return fail(res, 400, 'ที่อยู่ไม่ถูกต้อง');
 
+      const guideMatch=pathname.match(/^\/r\/g\/([a-f0-9]{32})(\/open)?$/);
+      if(guideMatch){
+        if(!workflow)return fail(res,503,'ตัวนับลิงก์ต้องใช้ server');
+        const outbound=!!guideMatch[2];
+        if(outbound?req.method!=='POST':!['GET','HEAD'].includes(req.method))return fail(res,405,'ไม่รองรับ method');
+        const found=workflow.resolveGuideLink(guideMatch[1],{method:req.method,outbound,userAgent:req.headers['user-agent']||'',purpose:req.headers['sec-purpose']||req.headers.purpose||''});
+        if(!found)return fail(res,404,'ไม่พบคู่มือนี้');
+        if(outbound){res.writeHead(303,{...securityHeaders,Location:found.destination,'X-Robots-Tag':'noindex, nofollow'});return res.end();}
+        return send(res,200,guideLanding(found),'text/html; charset=utf-8',req.method==='HEAD');
+      }
+
       if(pathname.startsWith('/api/workflow/')||pathname==='/api/sources/events'||pathname==='/webhooks/meta'){
         if(!workflowHTTP)return fail(res,503,'ระบบ Inbox ต้องใช้ Node server พร้อม SQLite');
         const result=await workflowHTTP(req,new URL(req.url,configuredOrigin||`http://${req.headers.host}`));
@@ -195,6 +209,7 @@ if (direct) {
   if(!['127.0.0.1','localhost','::1'].includes(listenHost)&&(!process.env.PUBLIC_ORIGIN||!process.env.OPERATOR_TOKEN))throw Error('External hosting requires PUBLIC_ORIGIN and OPERATOR_TOKEN');
   const replyConfig=collectorConfig(projectDir),browserPublisher=(process.argv.includes('--browser-replies')||process.env.BROWSER_REPLY_ENABLED==='true')?createBrowserCommentPublisher({profileDir:replyConfig.profileDir,groupId:replyConfig.groupId,channel:replyConfig.channel}):null;
   const server = createAppServer({publicOrigin:process.env.PUBLIC_ORIGIN||'',workflowOptions:{browserPublisher,
+    replyWriter:createPetmommyWriter({enabled:process.argv.includes('--petmommy-ai')||process.env.REPLY_LLM_ENABLED==='true',provider:process.env.REPLY_LLM_PROVIDER||'ollama',apiKey:process.env.OPENAI_API_KEY||'',...(process.env.REPLY_LLM_MODEL?{model:process.env.REPLY_LLM_MODEL}:{}),baseUrl:process.env.REPLY_OLLAMA_URL||'http://127.0.0.1:11434'}),trackingOrigin:process.env.GUIDE_TRACKING_ORIGIN||'',
     ...(process.env.WORKFLOW_DB_PATH?{dbPath:resolve(process.env.WORKFLOW_DB_PATH)}:{}),operatorToken:process.env.OPERATOR_TOKEN||'',ingestToken:process.env.INGEST_TOKEN||'',
     chatbotUrl:process.env.MEONGSILJANG_URL||'https://meongsiljang.com/th',televetUrl:process.env.TELEVET_URL||'',
     meta:{pageId:process.env.META_PAGE_ID||'',appId:process.env.META_APP_ID||'',accessToken:process.env.META_PAGE_ACCESS_TOKEN||'',appSecret:process.env.META_APP_SECRET||'',verifyToken:process.env.META_VERIFY_TOKEN||'',graphVersion:process.env.META_GRAPH_VERSION||'',publishEnabled:process.env.META_PAGE_PUBLISH_ENABLED==='true'},

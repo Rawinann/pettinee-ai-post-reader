@@ -1,0 +1,4 @@
+const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+export function guideLanding({title,token}){
+ return `<!doctype html><html lang="th"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>${esc(title)} · Pettinee</title><link rel="stylesheet" href="/guide-landing.css"><main><p>Pettinee · คู่มือสำหรับคนเลี้ยงแมว</p><h1>${esc(title)}</h1><p>รวมข้อมูลให้ทำความเข้าใจเรื่องที่กำลังสงสัย อ่านต่อในคู่มือของ Pettinee ได้เลยค่ะ</p><form method="post" action="/r/g/${esc(token)}/open"><button type="submit">อ่านคู่มือ</button></form><p class="note">เปิดที่ pettinee.meongsiljang.com</p><p class="note">หน้านี้นับจำนวนครั้งที่เปิดและกดอ่านคู่มือ โดยไม่เก็บชื่อ IP หรือคุกกี้ผู้เข้าชม ตัวเลขไม่ได้บอกว่าอ่านคู่มือจบแล้ว</p></main></html>`;
+}

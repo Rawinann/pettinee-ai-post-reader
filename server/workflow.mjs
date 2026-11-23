@@ -6,14 +6,18 @@ import {createPageAdapter,validateSourceEvent,mockEvent,MOCK_SCENARIOS} from './
 import {classifyTopics,evaluateSafety,verifiedGuides,generateReply,checkReply} from '../lib/workflow-policy.mjs';
 import {readCollectorStatus} from './collector-status.mjs';
 import {createCommentDelivery} from './comment-delivery.mjs';
+import {createPetmommyWriter} from './petmommy.mjs';
+import {createGuideTracking} from './guide-tracking.mjs';
 export function integrationURL(value){try{const u=new URL(value);if(u.protocol!=='https:'||u.username||u.password)return '';u.search='';u.hash='';return u.href;}catch{return '';}}
-export function createWorkflowService({rootDir,dbPath,intent,guides,pageAdapter,meta={},autoRun=true,pollMs=500,clock=Date.now,storeOptions={},chatbotUrl='https://meongsiljang.com/th',televetUrl='',collectorStatusPath=join(dirname(dbPath),'collector-status.json'),browserPublisher=null}={}){
+export function createWorkflowService({rootDir,dbPath,intent,guides,pageAdapter,meta={},autoRun=true,pollMs=500,clock=Date.now,storeOptions={},chatbotUrl='https://meongsiljang.com/th',televetUrl='',collectorStatusPath=join(dirname(dbPath),'collector-status.json'),browserPublisher=null,replyWriter=null,trackingOrigin=''}={}){
  const store=createWorkflowStore(dbPath,{clock,...storeOptions}),owner=randomUUID(),page=pageAdapter||createPageAdapter(meta);
  let catalogPromise,work=null,timer=null,closing=null,stopped=false,mockTimer=null,mockRemaining=0;
  const catalog=()=>catalogPromise??=readFile(join(rootDir,'data/guides/catalog.json'),'utf8').then(JSON.parse).catch(e=>{catalogPromise=null;throw e;});
  const get=id=>{const post=store.get(id);if(!post)throw workflowError('ไม่พบโพสต์',404);return post;};
  const checkedPost=(id,revision)=>{const post=get(id);if(post.revision!==revision)throw workflowError('คำตอบเปลี่ยนไปแล้ว กรุณาโหลดข้อมูลล่าสุด',409);const errors=checkReply(post.draft,post);if(errors.length)throw workflowError(errors.join(' · '),422);return post;};
  const commentDelivery=createCommentDelivery({store,checkedPost,publisher:browserPublisher,clock});
+ const writer=replyWriter||createPetmommyWriter(),tracking=createGuideTracking({store,origin:trackingOrigin});
+ const writeReply=async(post,options)=>{const generated=await writer.generate(post,options),tracked=tracking.attach(post,generated.draft);const replyMeta={...generated.meta,links:tracked.links};const errors=checkReply(tracked.draft,{...post,replyMeta});if(errors.length)throw workflowError(errors.join(' · '),422);return {draft:tracked.draft,replyMeta};};
  async function execute(job){
   const started=performance.now(),heartbeat=setInterval(()=>store.heartbeat(job),20000);heartbeat.unref?.();
   const step=async(name,fn)=>{const start=performance.now();store.stage(job,name);const value=await fn();store.stage(job,name,Math.round(performance.now()-start));return value;};
@@ -24,9 +28,8 @@ export function createWorkflowService({rootDir,dbPath,intent,guides,pageAdapter,
    const topics=await step('topic',()=>classifyTopics(post.text));
    const selected=await step('guide',async()=>{if(post.text.trim().length<4)return [];const found=await guides.search({text:post.text,species:'cat'});return verifiedGuides(found,await catalog());});
    const safety=await step('safety',()=>evaluateSafety(post.text,{intent:classified,topics,guides:selected,sourceMeta:post.sourceMeta}));
-   const draft=await step('draft',()=>generateReply({text:post.text,topics,guides:selected,safety}));
-   const errors=checkReply(draft,{guides:selected,safety});if(errors.length)throw workflowError('ร่างไม่ผ่านข้อกำหนด: '+errors.join(' · '),422);
-   store.complete(job,{intent:classified,topics,guides:selected,safety,draft,processingMs:Math.round(performance.now()-started)});
+   const generated=await step('draft',()=>writeReply({...post,topics,guides:selected,safety}));
+   store.complete(job,{intent:classified,topics,guides:selected,safety,...generated,processingMs:Math.round(performance.now()-started)});
   }catch(error){const safeMessage=error.statusCode?error.message:'วิเคราะห์ไม่สำเร็จ กรุณาตรวจโมเดล ดัชนี หรือแหล่งข้อมูลแล้วลองใหม่';store.fail(job,safeMessage);}
   finally{clearInterval(heartbeat);}
  }
@@ -34,10 +37,15 @@ export function createWorkflowService({rootDir,dbPath,intent,guides,pageAdapter,
  const kick=()=>{if(autoRun&&!stopped)runOnce().catch(()=>{});};
  const service={
   store,page,runOnce,
+  replyStatus:()=>writer.status(),
+  guideTrackingStatus:()=>tracking.status(),
+  trackingReport:()=>tracking.report(),
+  resolveGuideLink:(token,options)=>tracking.resolve(token,options),
+  async rewrite(id,{revision,externalDataReviewed=false,textForAI}){const post=get(id);if(post.revision!==revision||!['awaiting_review','needs_review','approved'].includes(post.status))throw workflowError('โหลดร่างล่าสุดที่ยังไม่ได้ส่งก่อนเขียนใหม่',409);if(writer.status().externalDataReviewRequired){if(externalDataReviewed!==true||typeof textForAI!=='string'||!textForAI.trim()||textForAI.length>10000)throw workflowError('ตรวจและลบข้อมูลส่วนบุคคลในข้อความที่จะส่ง OpenAI ก่อน',400);post.text=textForAI.trim();}const generated=await writeReply(post,{externalDataReviewed});const updated=store.edit(id,generated.draft,revision);return store.setReplyMeta(id,updated.revision,generated.replyMeta);},
   ingest(raw,options){const event=validateSourceEvent(raw,options);event.initialSafety=evaluateSafety(event.text,{sourceMeta:event.sourceMeta});const result=store.ingest(event);kick();return result;},
   list:options=>store.list(options),
   detail(id){const post=get(id);return {...post,replyErrors:post.draft?checkReply(post.draft,post):[],history:store.history(id),canPublishPage:post.sourceType==='page'&&page.status().canPublish,commentDelivery:commentDelivery.availability(post),demoComment:store.demoReceipt(id),publication:store.publication(id)};},
-  async status(){const [guideStatus,intentStatus]=await Promise.all([guides.status(),intent.status()]);const encoderAvailable=await access(join(rootDir,'models/guide-encoder/onnx/model_quantized.onnx')).then(()=>true,()=>false);return {available:true,brand:'แอพคุณหมอใจดี',company:'Pettinee',persistence:'server-sqlite',...store.stats(),connections:{collector:await readCollectorStatus(collectorStatusPath),page:page.status(),group:page.groupStatus(),import:{available:true},mock:{available:true,running:!!mockTimer,remaining:mockRemaining}},guides:{...guideStatus,encoderAvailable,metadataOnly:true},intent:{ready:intentStatus.ready,trainingLabelStatus:intentStatus.trainingLabelStatus},commentDelivery:commentDelivery.status(),approval:{required:true,autoReply:false,generator:'grounded_metadata_template',llmConnected:false},products:{chatbot:{mode:'external-link',url:integrationURL(chatbotUrl),apiConnected:false},televet:{mode:integrationURL(televetUrl)?'external-link':'not-configured',url:integrationURL(televetUrl),apiConnected:false,bookingConnected:false}},mockScenarios:MOCK_SCENARIOS};},
+  async status(){const [guideStatus,intentStatus]=await Promise.all([guides.status(),intent.status()]);const encoderAvailable=await access(join(rootDir,'models/guide-encoder/onnx/model_quantized.onnx')).then(()=>true,()=>false);return {available:true,brand:'แอพคุณหมอใจดี',company:'Pettinee',persistence:'server-sqlite',...store.stats(),connections:{collector:await readCollectorStatus(collectorStatusPath),page:page.status(),group:page.groupStatus(),import:{available:true},mock:{available:true,running:!!mockTimer,remaining:mockRemaining}},guides:{...guideStatus,encoderAvailable,metadataOnly:true},intent:{ready:intentStatus.ready,trainingLabelStatus:intentStatus.trainingLabelStatus},commentDelivery:commentDelivery.status(),reply:writer.status(),guideTracking:tracking.report(),approval:{required:true,autoReply:false,generator:writer.status().enabled?'petmommy-llm-with-fallback':'petmommy-template',llmConnected:!!writer.status().lastSuccessAt},products:{chatbot:{mode:'external-link',url:integrationURL(chatbotUrl),apiConnected:false},televet:{mode:integrationURL(televetUrl)?'external-link':'not-configured',url:integrationURL(televetUrl),apiConnected:false,bookingConnected:false}},mockScenarios:MOCK_SCENARIOS};},
   edit(id,{text,revision,actor='operator'}){if(typeof text!=='string'||!text.trim()||text.length>2400)throw workflowError('คำตอบต้องยาว 1–2,400 ตัวอักษร');return store.edit(id,text,revision,String(actor).slice(0,80));},
   approve(id,{revision,acknowledged,actor='operator'}){if(acknowledged!==true)throw workflowError('ต้องอ่านข้อความ คู่มือ และข้อควรตรวจ แล้วทำเครื่องหมายยืนยัน');checkedPost(id,revision);return store.approve(id,revision,String(actor).slice(0,80));},
   copy(id,{revision,actor='operator'}){checkedPost(id,revision);return {text:store.copy(id,revision,String(actor).slice(0,80)),published:false};},
