@@ -2,19 +2,29 @@ import {chromium} from 'playwright-core';
 import {mkdir} from 'node:fs/promises';
 import {workflowError} from '../server/workflow-store.mjs';
 import {groupCommentTarget} from '../server/comment-delivery.mjs';
-import {inspectReplyPage,visibleCommentReceipts,findCommentSubmit} from './comment-dom.mjs';
+import {inspectReplyPage,visibleCommentReceipts,findCommentSubmit,replyBrowserState} from './comment-dom.mjs';
 const normal=value=>String(value||'').normalize('NFC').replace(/\s+/gu,' ').trim();
 const fail=(message,definitive=true)=>Object.assign(workflowError(message,409),{definitive});
 export function createBrowserCommentPublisher({profileDir,groupId,channel='chrome',verifyTimeoutMs=20000,contextFactory,clock=Date.now}={}){
- let context,page,busy=false,ready=false,lastCheckedAt=null,closing=false;
+ let context,page,busy=false,ready=false,lastCheckedAt=null,closing=false,state='closed',account=null;
+ const messages={closed:'Chrome ยังปิดอยู่ จะเปิดเมื่อกดส่ง',opening:'กำลังเปิด Chrome',open:'Chrome เปิดอยู่ จะตรวจโพสต์และบัญชีอีกครั้งเมื่อกดส่ง',ready:'ตรวจช่องคอมเมนต์และบัญชีแล้ว พร้อมตรวจซ้ำก่อนส่ง',needs_login:'รอล็อกอิน Facebook ใน Chrome ของ worker',blocked:'รอยืนยันตัวตนใน Chrome ของ worker',wrong_page:'Chrome ไม่ได้อยู่ในกลุ่มที่กำหนด กดเปิด Chrome เพื่อกลับไปหน้ากลุ่ม',waiting_page:'รอหน้า Facebook โหลด',error:'ตรวจ Chrome ไม่สำเร็จ ลองเปิด Chrome อีกครั้ง'};
+ const status=()=>({ready,busy,browserOpen:!!context&&!!page&&!page.isClosed(),state,lastCheckedAt,account,message:messages[state]||messages.open});
+ async function refreshStatus(){
+  if(!context||!page||page.isClosed()){state='closed';ready=false;account=null;return status();}
+  if(busy)return status();
+  try{const inspected=await page.evaluate(replyBrowserState,{groupId});state=inspected.state;if(state!=='open')ready=false;else if(ready)state='ready';if(!ready)account=null;lastCheckedAt=new Date(clock()).toISOString();}catch{state='error';ready=false;account=null;}
+  return status();
+ }
+ async function disconnect(){if(context)await context.close().catch(()=>{});context=null;page=null;state='closed';ready=false;account=null;}
  async function browserPage(){
   if(closing)throw fail('ตัวส่งกำลังปิด');
   if(page&&!page.isClosed())return page;
+  state='opening';
   if(context){await context.close().catch(()=>{});context=null;}
   await mkdir(profileDir,{recursive:true});
   try{context=await (contextFactory?contextFactory():chromium.launchPersistentContext(profileDir,{channel,headless:false,chromiumSandbox:true,acceptDownloads:false,viewport:{width:1280,height:900}}));}
-  catch{throw fail('เปิด Chrome ของตัวส่งไม่ได้ กรุณาปิด worker ที่ใช้โปรไฟล์เดียวกันก่อน และตรวจ Chrome ที่ติดตั้ง');}
-  context.on?.('close',()=>{context=null;page=null;ready=false;});
+  catch{state='error';throw fail('เปิด Chrome ของตัวส่งไม่ได้ กรุณาปิด worker ที่ใช้โปรไฟล์เดียวกันก่อน และตรวจ Chrome ที่ติดตั้ง');}
+  context.on?.('close',()=>{context=null;page=null;ready=false;state='closed';account=null;});
   page=await context.newPage();page.setDefaultTimeout?.(10000);return page;
  }
  async function inspect(post,target,{navigate=true,allowDraft=false}={}){
@@ -24,15 +34,18 @@ export function createBrowserCommentPublisher({profileDir,groupId,channel='chrom
   const deadline=clock()+15000;
   do{result=await p.evaluate(inspectReplyPage,args);if(result.state!=='composer_unavailable')break;await p.waitForTimeout(300);}while(clock()<deadline);
   const errors={blocked:'Chrome อยู่ที่ checkpoint/challenge ให้ยืนยันตัวตนเองก่อน',needs_login:'ต้องล็อกอินใน Chrome โปรไฟล์ worker ก่อน',wrong_post:'หน้าที่เปิดไม่ตรงกับโพสต์ปลายทาง',source_changed:'ข้อความต้นทางที่เห็นไม่ตรงกับข้อมูลที่ตรวจไว้ ต้องทบทวนโพสต์อีกครั้ง',composer_unavailable:'ยังหาช่องคอมเมนต์หลักที่ชัดเจนไม่ได้ อาจปิดคอมเมนต์หรือรูปแบบหน้าเปลี่ยน'};
-  if(result.state!=='ready'){ready=false;throw fail(errors[result.state]||'ตรวจหน้าคอมเมนต์ไม่ได้');}
+  if(result.state!=='ready'){ready=false;state=['needs_login','blocked'].includes(result.state)?result.state:'open';throw fail(errors[result.state]||'ตรวจหน้าคอมเมนต์ไม่ได้');}
   if(result.existingDraft&&!allowDraft)throw fail('ช่องคอมเมนต์มีข้อความค้างอยู่ กรุณาตรวจใน Chrome ก่อน ระบบจะไม่เขียนทับ');
-  ready=true;lastCheckedAt=new Date(clock()).toISOString();return {page:p,...result};
+  ready=true;state='ready';account=result.account;lastCheckedAt=new Date(clock()).toISOString();return {page:p,...result};
  }
  async function exclusive(fn){if(busy)throw fail('กำลังเตรียมหรือส่งโพสต์อื่น กรุณารอผลก่อน');busy=true;try{return await fn();}finally{busy=false;}}
  return {
   enabled:true,
   groupId,
-  status:()=>({ready,busy,lastCheckedAt,message:ready?'ตรวจโพสต์และบัญชีใน Chrome แล้ว ต้องยืนยันส่งทีละโพสต์':'เปิดส่งจริงแล้ว รอตรวจโพสต์และบัญชีใน Chrome'}),
+  status,
+  refreshStatus,
+  async open(){await exclusive(async()=>{const p=await browserPage();try{await p.goto('https://www.facebook.com/groups/'+groupId+'/',{waitUntil:'domcontentloaded',timeout:45000});await p.bringToFront?.();ready=false;account=null;}catch{state='error';throw fail('เปิดหน้ากลุ่มไม่สำเร็จ กรุณาตรวจ Chrome และการเชื่อมต่อ');}});return refreshStatus();},
+  disconnect:()=>exclusive(async()=>{await disconnect();return status();}),
   prepare:post=>exclusive(async()=>{const target=groupCommentTarget(post,groupId),state=await inspect(post,target);return {...target,account:state.account};}),
   send:(post,expected)=>exclusive(async()=>{
    let attempted=false,composer=null,p=null;
@@ -65,6 +78,6 @@ export function createBrowserCommentPublisher({profileDir,groupId,channel='chrom
     throw error;
    }
   }),
-  async close(){closing=true;if(context)await context.close().catch(()=>{});context=null;page=null;ready=false;},
+  async close(){closing=true;await disconnect();},
  };
 }

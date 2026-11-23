@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {parseHTML} from 'linkedom';
-import {inspectReplyPage,visibleCommentReceipts,findCommentSubmit} from '../automation/comment-dom.mjs';
+import {inspectReplyPage,visibleCommentReceipts,findCommentSubmit,replyBrowserState} from '../automation/comment-dom.mjs';
 import {createBrowserCommentPublisher} from '../automation/comment-driver.mjs';
 const groupId='1067156573375730',postId='100',url=`https://www.facebook.com/groups/${groupId}/posts/${postId}/`;
 const post={sourceType:'group',externalId:groupId+':'+postId,url,text:'หลังทำหมันแผลยังบวม อยากทราบข้อมูลเพิ่มเติม',draft:'ลองอ่านคู่มือการดูแลหลังทำหมันเพิ่มเติมค่ะ'};
@@ -17,7 +17,7 @@ function fixture({receipt=true,pending=false}={}){
  }};
  const page={isClosed:()=>closed,setDefaultTimeout(){},goto:async target=>{document.location.href=target;},evaluate:async(fn,args)=>fn(args,document),getByRole:()=>composer,waitForTimeout:async ms=>{now+=ms;}};
  const context={on(){},newPage:async()=>page,close:async()=>{closed=true;}};
- const publisher=createBrowserCommentPublisher({groupId,profileDir:'tmp/reply-browser-fixture',verifyTimeoutMs:800,contextFactory:async()=>context,clock:()=>now});
+ const publisher=createBrowserCommentPublisher({groupId,profileDir:'tmp/reply-browser-fixture',verifyTimeoutMs:800,contextFactory:async()=>{closed=false;return context;},clock:()=>now});
  return {document,editor,publisher,addReceipt,clicks:()=>clicks};
 }
 test('DOM preflight rejects login, wrong target, changed source, multiple composers and reports existing draft',()=>{
@@ -53,4 +53,12 @@ test('missing send button clears only the injected unsent draft; post-click time
 });
 test('browser adapter reports group moderation independently from visible submission',async t=>{
  const f=fixture({pending:true});t.after(()=>f.publisher.close());const target=await f.publisher.prepare(post);const sent=await f.publisher.send(post,target);assert.equal(sent.pendingModeration,true);assert.equal(f.clicks(),1);
+});
+test('opening/closing/reopening the worker never fills or submits and status reflects login and checkpoint',async t=>{
+ const f=fixture();t.after(()=>f.publisher.close());assert.equal(f.publisher.status().browserOpen,false);const opened=await f.publisher.open();assert.equal(opened.browserOpen,true);assert.equal(opened.state,'open');assert.equal(f.editor.textContent,'');assert.equal(f.clicks(),0);
+ f.document.location.href='https://www.facebook.com/login/';assert.equal((await f.publisher.refreshStatus()).state,'needs_login');f.document.location.href='https://www.facebook.com/checkpoint/';assert.equal((await f.publisher.refreshStatus()).state,'blocked');
+ await f.publisher.disconnect();assert.equal(f.publisher.status().state,'closed');await f.publisher.open();assert.equal(f.publisher.status().browserOpen,true);assert.equal(f.clicks(),0);
+});
+test('worker status does not claim the source is connected on a different group or a hidden login form',()=>{
+ const f=fixture();f.document.location.href='https://www.facebook.com/groups/999/';assert.equal(replyBrowserState({groupId},f.document).state,'wrong_page');f.document.location.href=url;const hidden=f.document.createElement('input');hidden.type='password';hidden.hidden=true;f.document.body.append(hidden);assert.equal(replyBrowserState({groupId},f.document).state,'open');hidden.hidden=false;assert.equal(replyBrowserState({groupId},f.document).state,'needs_login');
 });

@@ -1,4 +1,12 @@
 // Serializable DOM-only inspections. They never read cookies or hidden app state.
+export function replyBrowserState({groupId},suppliedDocument){
+ const doc=suppliedDocument||document,u=new URL(doc.location.href);
+ const visible=el=>!el.closest('[hidden],[aria-hidden="true"]')&&(typeof getComputedStyle!=='function'||(getComputedStyle(el).display!=='none'&&getComputedStyle(el).visibility!=='hidden'&&el.getClientRects().length>0));
+ if(/\/checkpoint|\/challenge|\/two_step_verification/.test(u.pathname))return {state:'blocked'};
+ if(/\/login/.test(u.pathname)||Array.from(doc.querySelectorAll('input[type="password"],#login_form')).some(visible))return {state:'needs_login'};
+ if(!['www.facebook.com','web.facebook.com','facebook.com'].includes(u.hostname)||!new RegExp('^/groups/'+groupId+'(?:/|$)').test(u.pathname))return {state:'wrong_page'};
+ return {state:doc.querySelector('main,[role="main"],[role="feed"],[role="article"]')?'open':'waiting_page'};
+}
 export function inspectReplyPage({groupId,postId,sourceText},suppliedDocument){
  const doc=suppliedDocument||document,normal=value=>String(value||'').normalize('NFC').replace(/\s+/gu,' ').trim();
  const u=new URL(doc.location.href);

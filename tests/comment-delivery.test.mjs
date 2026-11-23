@@ -43,6 +43,12 @@ test('target validation rejects other groups, mismatched IDs, non-group records 
  const p=source();assert.equal(groupCommentTarget(p,groupId).postId,'100');
  for(const bad of [{...p,url:'https://evil.example/groups/'+groupId+'/posts/100/'},{...p,url:'https://www.facebook.com/groups/999/posts/100/'},{...p,externalId:groupId+':101'},{...p,sourceType:'mock'},{...p,url:'https://user:secret@www.facebook.com/groups/'+groupId+'/posts/100/'}])assert.throws(()=>groupCommentTarget(bad,groupId));
 });
+test('closing the worker invalidates prepared tickets and does not submit a comment',async()=>{
+ let disconnects=0,sends=0;const f=fixture({publisher:fakePublisher({disconnect:async()=>{disconnects++;},send:async()=>{sends++;return {id:'777'};}})});try{const p=post(f.store);f.store.approve(p.id,p.revision);const ticket=await f.delivery.preview(p.id,{revision:p.revision,mode:'live'});await f.delivery.closeBrowser();assert.equal(disconnects,1);await assert.rejects(f.delivery.send(p.id,{ticketId:ticket.ticketId,revision:p.revision,confirmed:true}),/หมดอายุ/);assert.equal(sends,0);}finally{await f.close();}
+});
+test('the worker cannot be disconnected while a publication is in flight',async()=>{
+ let release,disconnects=0;const gate=new Promise(r=>release=r),f=fixture({publisher:fakePublisher({disconnect:async()=>{disconnects++;},send:async()=>{await gate;return {id:'777'};}})});try{const p=post(f.store);f.store.approve(p.id,p.revision);const ticket=await f.delivery.preview(p.id,{revision:p.revision,mode:'live'}),sending=f.delivery.send(p.id,{ticketId:ticket.ticketId,revision:p.revision,confirmed:true});await assert.rejects(f.delivery.closeBrowser(),e=>e.statusCode===409);assert.equal(disconnects,0);release();await sending;}finally{release?.();await f.close();}
+});
 test('pending moderation is recorded as a visible submission and shown separately from public visibility',async()=>{
  const f=fixture({publisher:fakePublisher({send:async()=>({id:'777',pendingModeration:true})})});try{const p=post(f.store);f.store.approve(p.id,p.revision);const t=await f.delivery.preview(p.id,{revision:p.revision,mode:'live'});assert.equal((await f.delivery.send(p.id,{ticketId:t.ticketId,revision:p.revision,confirmed:true})).pendingModeration,true);assert.equal(f.store.publication(p.id).info.verification,'visible-pending-moderation');}finally{await f.close();}
 });

@@ -85,6 +85,7 @@ test('HTTP workflow authentication, connector ingestion and source permission re
  const {service,dir,resources}=await fixture(t);await service.close();const server=createAppServer({workflowOptions:{dbPath:join(dir,'http.sqlite'),operatorToken:'operator-test',ingestToken:'connector-test',autoRun:false}});await new Promise(r=>server.listen(0,'127.0.0.1',r));resources.push(async()=>{await server.workflow.close();await new Promise(r=>server.close(r));});const base='http://127.0.0.1:'+server.address().port;
  const request=(path,body,token='operator-test')=>fetch(base+path,{method:body?'POST':'GET',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{})});
  assert.equal((await request('/api/workflow/status',null,'wrong')).status,401);assert.equal((await (await request('/api/workflow/status')).json()).connections.group.connected,false);
+ assert.equal((await request('/api/workflow/reply-browser/open',{},'wrong')).status,401);assert.equal((await request('/api/workflow/reply-browser/close',{},'wrong')).status,401);assert.equal((await request('/api/workflow/reply-browser/open',{})).status,503);
  assert.equal((await request('/api/workflow/posts',{sourceType:'group',text:'ข้อความจากกลุ่ม'})).status,400);
  assert.equal((await request('/api/workflow/posts',{sourceType:'page',externalId:'1_2',text:'forged',authorized:true})).status,403);
  const event={sourceType:'group',externalId:'authorized-connector',text:'หลังทำหมันวันที่ 5–6 แผลยังดูบวม จึงถามว่าปกติหรือไม่',authorized:true};
