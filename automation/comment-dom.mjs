@@ -21,24 +21,44 @@ export function inspectReplyPage({groupId,postId,sourceText},suppliedDocument){
  const sourcePrefix=normal(sourceText).slice(0,80);
  if(!sourcePrefix||!normal(scope.innerText??scope.textContent).includes(sourcePrefix))return {state:'source_changed'};
  const label=el=>normal(el.getAttribute('aria-label')||el.getAttribute('placeholder')||(el.getAttribute('aria-labelledby')||'').split(/\s+/).map(id=>doc.getElementById(id)?.textContent||'').join(' '));
- const editors=Array.from(scope.querySelectorAll('[role="textbox"][contenteditable="true"],textarea[aria-label]')).filter(el=>visible(el)&&(/^(แสดงความคิดเห็นในชื่อ|Comment as)\s+.+/iu.test(label(el))||/^(เขียนความคิดเห็นที่แสดงต่อสาธารณะ|Write a public comment)/iu.test(label(el))));
+ const editors=Array.from(scope.querySelectorAll('[role="textbox"][contenteditable="true"],textarea[aria-label]')).filter(el=>visible(el)&&(/^(แสดงความคิดเห็นในชื่อ|Comment as)\s+.+/iu.test(label(el))||/^(เขียนความคิดเห็นที่แสดงต่อสาธารณะ|Write a public comment|เขียนคำตอบ|Write a reply)/iu.test(label(el))));
  if(editors.length!==1)return {state:'composer_unavailable',composerCount:editors.length};
  const editor=editors[0],editorLabel=label(editor),account=editorLabel.replace(/^(แสดงความคิดเห็นในชื่อ|Comment as)\s+/iu,'').trim();
  if(account===editorLabel)return {state:'account_unavailable',editorLabel};
  return {state:'ready',account,editorLabel,existingDraft:normal(editor.value??editor.innerText??editor.textContent).length>0};
 }
 
+// Read only the identity explicitly marked as selected in Facebook's visible
+// profile switcher. A generic composer label alone is never identity proof.
+export function selectedCommentAccount(_args,suppliedDocument){
+ const doc=suppliedDocument||document,normal=value=>String(value||'').normalize('NFC').replace(/\s+/gu,' ').trim();
+ const visible=el=>!el.closest('[hidden],[aria-hidden="true"]')&&(typeof getComputedStyle!=='function'||(getComputedStyle(el).display!=='none'&&getComputedStyle(el).visibility!=='hidden'&&el.getClientRects().length>0));
+ const menus=Array.from(doc.querySelectorAll('[role="dialog"]')).filter(el=>visible(el)&&/โปรไฟล์และเพจของคุณ|Your profiles and Pages/iu.test(normal(el.textContent)));
+ const menu=menus.at(-1);if(!menu)return null;
+ const selected=Array.from(menu.querySelectorAll('button,[role="button"]')).filter(el=>visible(el)&&/เลือกไว้ในขณะนี้|currently selected/iu.test(normal(el.getAttribute('aria-label')||el.textContent)));
+ if(selected.length!==1)return null;
+ const raw=normal(selected[0].innerText??selected[0].textContent??selected[0].getAttribute('aria-label'));
+ const account=raw.replace(/\s*(?:\d+\s*)?(?:การอัพเดต|การอัปเดต|การแจ้งเตือน|unread updates|notifications?|เลือกไว้ในขณะนี้|currently selected).*$/iu,'').trim();
+ return account&&account.length<=200?account:null;
+}
+
 export function visibleCommentReceipts({groupId,postId,text,account},suppliedDocument){
  const doc=suppliedDocument||document,normal=value=>String(value||'').normalize('NFC').replace(/\s+/gu,' ').trim(),expected=normal(text),name=normal(account),receipts=[];
- const scope=doc.querySelector('main,[role="main"]');if(!scope||!expected||!name)return receipts;
+ const expectedUrls=Array.from(expected.matchAll(/https:\/\/\S+/gu),m=>{try{return new URL(m[0]);}catch{return null;}}).filter(Boolean);
+ const expectedWords=normal(expected.replace(/https:\/\/\S+/gu,''));
+ const visible=el=>!el.closest('[hidden],[aria-hidden="true"]')&&(typeof getComputedStyle!=='function'||(getComputedStyle(el).display!=='none'&&getComputedStyle(el).visibility!=='hidden'&&el.getClientRects().length>0));
+ const dialogs=Array.from(doc.querySelectorAll('[role="dialog"]')).filter(el=>visible(el)&&el.querySelector('[role="article"],article'));
+ const scope=dialogs.at(-1)||doc.querySelector('main,[role="main"]');if(!scope||!expected||!name)return receipts;
  for(const row of scope.querySelectorAll('[role="article"][aria-label],article[aria-label]')){
   const label=normal(row.getAttribute('aria-label'));
   if(!label.startsWith('ความคิดเห็นจาก '+name)&&!label.toLowerCase().startsWith('comment by '+name.toLowerCase()))continue;
   const own=node=>node.closest('[role="article"],article')===row;
-  const body=Array.from(row.querySelectorAll('div,span,p')).find(n=>own(n)&&!n.closest('[contenteditable="true"]')&&normal(n.innerText??n.textContent)===expected);
-  if(!body)continue;
-  for(const anchor of row.querySelectorAll('a[href]')){
-   if(!own(anchor))continue;
+  const exactBody=Array.from(row.querySelectorAll('div,span,p')).some(n=>own(n)&&!n.closest('[contenteditable="true"]')&&normal(n.innerText??n.textContent)===expected);
+  const anchors=Array.from(row.querySelectorAll('a[href]')).filter(own);
+  const matchesGuide=target=>anchors.some(anchor=>{try{let u=new URL(anchor.getAttribute('href'),doc.location.href);if(u.hostname==='l.facebook.com'&&u.searchParams.has('u'))u=new URL(u.searchParams.get('u'));return u.protocol==='https:'&&u.origin===target.origin&&u.pathname===target.pathname&&Array.from(target.searchParams).every(([key,value])=>u.searchParams.get(key)===value);}catch{return false;}});
+  const linkedBody=expectedUrls.length>0&&expectedWords.length>=20&&normal(row.innerText??row.textContent).includes(expectedWords)&&expectedUrls.every(matchesGuide);
+  if(!exactBody&&!linkedBody)continue;
+  for(const anchor of anchors){
    try{const u=new URL(anchor.getAttribute('href'),doc.location.href),m=u.pathname.match(/^\/groups\/(\d+)\/(?:posts|permalink)\/([A-Za-z0-9_-]+)\/?$/),id=u.searchParams.get('comment_id');
     if(u.protocol!=='https:'||!['www.facebook.com','web.facebook.com','facebook.com'].includes(u.hostname)||!m||m[1]!==groupId||m[2]!==postId||!id||!/^[A-Za-z0-9_-]+$/.test(id)||u.searchParams.has('reply_comment_id'))continue;
     receipts.push({id,url:'https://www.facebook.com/groups/'+groupId+'/posts/'+postId+'/?comment_id='+id,pendingModeration:/รอ.{0,12}อนุมัติ|รอดำเนินการ|pending approval|pending review/iu.test(row.innerText??row.textContent)});break;

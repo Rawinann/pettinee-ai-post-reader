@@ -15,8 +15,14 @@ function fixture(t,{prepareError=null,sendError=null,approveError=null,editError
   if(sendError)throw Error(sendError);return {mode:'live'};
  }};
  const ui=createCommentUI(host);host.workspace.innerHTML='<textarea id="wf-draft"></textarea>'+ui.controls(post);document.getElementById('wf-draft').value=post.draft;
- return {document,requests,messages,release,refreshes:()=>refreshes,post:()=>post,edit:text=>{const field=document.getElementById('wf-draft');field.value=text;field.dispatchEvent(new window.Event('input',{bubbles:true}));},selectOther:()=>{post={...post,id:'two'};},click:()=>document.querySelector('[data-comment-action="send-live"]').dispatchEvent(new window.Event('click',{bubbles:true}))};
+ return {document,ui,requests,messages,release,refreshes:()=>refreshes,post:()=>post,edit:text=>{const field=document.getElementById('wf-draft');field.value=text;field.dispatchEvent(new window.Event('input',{bubbles:true}));},selectOther:()=>{post={...post,id:'two'};},click:()=>document.querySelector('[data-comment-action="send-live"]').dispatchEvent(new window.Event('click',{bubbles:true}))};
 }
+
+test('reconciled Facebook comment shows its direct link without a second send',t=>{
+ const b=fixture(t);const post={...b.post(),url:'https://www.facebook.com/groups/1067156573375730/posts/29490565703941437/',publication:{method:'browser-ui',state:'sent',externalId:'29491813593816648',info:{}}};
+ assert.match(b.ui.receipts(post),/comment_id=29491813593816648/);
+ assert.doesNotMatch(b.ui.receipts(post),/บัญชี ไม่ระบุ/);
+});
 
 test('one click saves the visible edit, approves its new revision and sends exactly once',async t=>{
  const b=fixture(t);b.edit('ข้อความที่แก้แล้วครับ');assert.equal(b.document.querySelector('button').disabled,false);b.click();b.click();b.release();await waitFor(()=>b.messages.some(m=>m.includes('ส่งคำตอบไป')));

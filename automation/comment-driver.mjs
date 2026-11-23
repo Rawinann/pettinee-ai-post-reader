@@ -2,7 +2,7 @@ import {chromium} from 'playwright-core';
 import {mkdir} from 'node:fs/promises';
 import {workflowError} from '../server/workflow-store.mjs';
 import {groupCommentTarget} from '../server/comment-delivery.mjs';
-import {inspectReplyPage,visibleCommentReceipts,findCommentSubmit,replyBrowserState} from './comment-dom.mjs';
+import {inspectReplyPage,selectedCommentAccount,visibleCommentReceipts,findCommentSubmit,replyBrowserState} from './comment-dom.mjs';
 const normal=value=>String(value||'').normalize('NFC').replace(/\s+/gu,' ').trim();
 const fail=(message,definitive=true)=>Object.assign(workflowError(message,409),{definitive});
 export function createBrowserCommentPublisher({profileDir,groupId,channel='chrome',verifyTimeoutMs=20000,startupTimeoutMs=15000,pageTimeoutMs=8000,navigationTimeoutMs=20000,inspectionTimeoutMs=5000,contextFactory,clock=Date.now}={}){
@@ -39,6 +39,20 @@ export function createBrowserCommentPublisher({profileDir,groupId,channel='chrom
   const args={...target,sourceText:post.text};let result;
   const deadline=clock()+15000;
   do{result=await bounded(()=>p.evaluate(inspectReplyPage,args),inspectionTimeoutMs,'ตรวจโพสต์ใน Chrome เกินเวลาที่กำหนด');if(!['composer_unavailable','waiting_page'].includes(result.state))break;progress(result.state,result.state==='waiting_page'?'กำลังรอให้โพสต์ Facebook โหลดจนเห็นข้อความและช่องคอมเมนต์…':'กำลังรอช่องคอมเมนต์หลักของโพสต์…');await p.waitForTimeout(300);}while(clock()<deadline);
+  if(result.state==='account_unavailable'){
+   progress('checking-account','กำลังตรวจว่าบัญชี Facebook ใดถูกเลือกสำหรับคอมเมนต์นี้…');
+   const switcher=p.getByRole('button',{name:/^(เปลี่ยนเป็นโปรไฟล์หรือเพจอื่น|Switch profile or Page)$/iu});
+   if(await switcher.count()===1){
+    await bounded(()=>switcher.click(),inspectionTimeoutMs,'เปิดหน้าตรวจบัญชี Facebook ไม่สำเร็จ');
+    const menu=p.getByRole('dialog',{name:/^(โปรไฟล์และเพจของคุณ|Your profiles and Pages)$/iu});
+    let accountName;
+    try{await bounded(()=>menu.waitFor({state:'visible'}),inspectionTimeoutMs,'หน้าตรวจบัญชี Facebook ไม่ปรากฏ');accountName=await bounded(()=>p.evaluate(selectedCommentAccount),inspectionTimeoutMs,'อ่านบัญชี Facebook ที่เลือกไม่สำเร็จ');}
+    finally{await bounded(()=>menu.getByRole('button',{name:/^(ปิด|Close)$/iu}).click(),inspectionTimeoutMs,'ปิดหน้าตรวจบัญชี Facebook ไม่สำเร็จ');}
+    const rechecked=await bounded(()=>p.evaluate(inspectReplyPage,args),inspectionTimeoutMs,'ตรวจโพสต์อีกครั้งไม่สำเร็จ');
+    if(rechecked.state==='account_unavailable'&&accountName)result={...rechecked,state:'ready',account:accountName};
+    else result=rechecked.state==='account_unavailable'?rechecked:{...rechecked,state:rechecked.state};
+   }
+  }
   const errors={blocked:'Chrome อยู่ที่ checkpoint/challenge ให้ยืนยันตัวตนเองก่อน',needs_login:'ต้องล็อกอินใน Chrome โปรไฟล์ worker ก่อน',wrong_post:'หน้าที่เปิดไม่ตรงกับโพสต์ปลายทาง',waiting_page:'หน้าโพสต์ Facebook ยังโหลดไม่เสร็จ กรุณารอสักครู่แล้วลองอีกครั้ง',source_changed:'ข้อความต้นทางที่เห็นไม่ตรงกับข้อมูลที่เก็บไว้ ต้องทบทวนโพสต์อีกครั้งก่อนส่ง',account_unavailable:'พบช่องคอมเมนต์แล้ว แต่ Facebook ไม่แสดงชื่อบัญชีที่ใช้ตอบในช่องนี้ จึงยังไม่กดส่ง',composer_unavailable:'ยังหาช่องคอมเมนต์หลักที่ชัดเจนไม่ได้ อาจปิดคอมเมนต์หรือรูปแบบหน้าเปลี่ยน'};
   if(result.state!=='ready'){ready=false;state=['needs_login','blocked'].includes(result.state)?result.state:'open';progress(result.state,errors[result.state]||'ตรวจหน้าคอมเมนต์ไม่ได้');throw fail(errors[result.state]||'ตรวจหน้าคอมเมนต์ไม่ได้');}
   if(result.existingDraft&&!allowDraft)throw fail('ช่องคอมเมนต์มีข้อความค้างอยู่ กรุณาตรวจใน Chrome ก่อน ระบบจะไม่เขียนทับ');

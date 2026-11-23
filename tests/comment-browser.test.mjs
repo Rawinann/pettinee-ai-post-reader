@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {parseHTML} from 'linkedom';
-import {inspectReplyPage,visibleCommentReceipts,findCommentSubmit,replyBrowserState} from '../automation/comment-dom.mjs';
+import {inspectReplyPage,selectedCommentAccount,visibleCommentReceipts,findCommentSubmit,replyBrowserState} from '../automation/comment-dom.mjs';
 import {createBrowserCommentPublisher} from '../automation/comment-driver.mjs';
 const groupId='1067156573375730',postId='100',url=`https://www.facebook.com/groups/${groupId}/posts/${postId}/`;
 const post={sourceType:'group',externalId:groupId+':'+postId,url,text:'หลังทำหมันแผลยังบวม อยากทราบข้อมูลเพิ่มเติม',draft:'ลองอ่านคู่มือการดูแลหลังทำหมันเพิ่มเติมค่ะ'};
@@ -42,12 +42,44 @@ test('post dialog is inspected and an unnamed public composer cannot authorize s
  document.querySelector('[role="dialog"]').remove();
  assert.equal(inspectReplyPage(args,document).state,'waiting_page');
 });
+test('selected profile must be explicit, unique and visible',()=>{
+ const {document}=parseHTML('<html><body><div role="dialog"><h2>โปรไฟล์และเพจของคุณ</h2><button aria-label="Test Adminการแจ้งเตือน 4 รายการเลือกไว้ในขณะนี้">Test Admin</button></div></body></html>');
+ assert.equal(selectedCommentAccount(undefined,document),'Test Admin');
+ const button=document.querySelector('button');button.setAttribute('hidden','');assert.equal(selectedCommentAccount(undefined,document),null);
+ button.removeAttribute('hidden');button.parentElement.append(button.cloneNode(true));assert.equal(selectedCommentAccount(undefined,document),null);
+});
+test('generic reply composer uses the selected profile for read-only preview and rechecks it before mock send',async t=>{
+ const f=fixture();t.after(()=>f.publisher.close());f.editor.setAttribute('aria-label','เขียนคำตอบ...');
+ const switcher=f.document.createElement('button');switcher.setAttribute('aria-label','เปลี่ยนเป็นโปรไฟล์หรือเพจอื่น');f.editor.parentElement.prepend(switcher);
+ const originalGetByRole=f.page.getByRole;
+ f.page.getByRole=(role,{name}={})=>{
+  if(role==='textbox')return originalGetByRole(role,{name});
+  if(role==='button')return {count:async()=>1,click:async()=>{const menu=f.document.createElement('div');menu.setAttribute('role','dialog');menu.innerHTML='<h2>โปรไฟล์และเพจของคุณ</h2><button aria-label="Test Adminเลือกไว้ในขณะนี้">Test Admin</button><button aria-label="ปิด">ปิด</button>';f.document.body.append(menu);}};
+  if(role==='dialog')return {waitFor:async()=>{},getByRole:()=>({click:async()=>f.document.querySelector('[role="dialog"]').remove()})};
+ };
+ const target=await f.publisher.prepare(post);assert.equal(target.account,'Test Admin');assert.equal(f.clicks(),0);
+ const sent=await f.publisher.send(post,target);assert.equal(sent.id,'900');assert.equal(f.clicks(),1);
+});
 test('receipt requires matching message, account, top-level comment ID and exact target; hidden/ambiguous submit is rejected',()=>{
  const f=fixture(),args={groupId,postId,text:post.draft,account:'Test Admin'};
  f.addReceipt({account:'Other Admin'});f.addReceipt({id:'901',text:'Other text'});f.addReceipt({id:'902',target:url.replace('/100/','/101/')});assert.deepEqual(visibleCommentReceipts(args,f.document),[]);
  f.addReceipt();assert.equal(visibleCommentReceipts(args,f.document)[0].id,'900');assert.ok(findCommentSubmit(f.editor));
  f.document.querySelector('button').setAttribute('hidden','');assert.equal(findCommentSubmit(f.editor),null);
  f.document.querySelector('button').removeAttribute('hidden');f.editor.parentElement.append(f.document.querySelector('button').cloneNode());assert.equal(findCommentSubmit(f.editor),null);
+});
+test('visible proof can be found in a Facebook post dialog',()=>{
+ const {document}=parseHTML('<html><body><div role="dialog"><article role="article" aria-label="Comment by Test Admin"><p>Test reply</p><a href="'+url+'?comment_id=900">1 min</a></article></div></body></html>');
+ document.location={href:url};
+ assert.equal(visibleCommentReceipts({groupId,postId,text:'Test reply',account:'Test Admin'},document)[0].id,'900');
+});
+test('Facebook link preview still verifies exact visible words, guide destination and comment permalink',()=>{
+ const guide='https://pettinee.meongsiljang.com/th/guide/qa/newborn-puppy-kitten-nutrition?utm_source=facebook&utm_content=token123';
+ const words='ข้อมูลการดูแลลูกแมวที่ควรอ่านก่อนเลือกอาหารครับ อ่านเพิ่มได้ที่นี่ครับ';
+ const {document}=parseHTML('<html><body><div role="dialog"><article role="article" aria-label="ความคิดเห็นจาก Test Admin เมื่อ ไม่กี่วินาทีที่แล้ว"><p>'+words+'</p><a href="https://l.facebook.com/l.php?u='+encodeURIComponent(guide)+'">ลิงก์คู่มือ</a><a href="'+url+'?comment_id=901">เวลาโพสต์</a><div>คู่มือพร้อมภาพพรีวิว</div></article></div></body></html>');
+ document.location={href:url};const args={groupId,postId,text:words+'\n'+guide,account:'Test Admin'};
+ assert.equal(visibleCommentReceipts(args,document)[0].id,'901');
+ assert.deepEqual(visibleCommentReceipts({...args,text:words+'\n'+guide.replace('token123','other')},document),[]);
+ assert.deepEqual(visibleCommentReceipts({...args,text:'ข้อความคนละเรื่อง '+words+'\n'+guide},document),[]);
 });
 test('browser adapter prepares read-only and sends once only after rechecking account and approved draft',async t=>{
  const f=fixture();t.after(()=>f.publisher.close());const target=await f.publisher.prepare(post);assert.equal(f.editor.textContent,'');assert.equal(f.clicks(),0);assert.equal(target.account,'Test Admin');
