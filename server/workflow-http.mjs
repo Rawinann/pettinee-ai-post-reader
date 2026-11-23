@@ -40,6 +40,7 @@ export function createWorkflowHTTP(service,{operatorToken='',ingestToken=''}={})
   if(path==='/api/workflow/connections/page/verify')return {body:await service.page.verify()};
   if(path==='/api/workflow/page/import')return {status:202,body:await service.importPage(body.postId)};
   if(path==='/api/workflow/reply-browser/open')return {body:await service.openReplyBrowser()};
+  if(path==='/api/workflow/reply-browser/show')return {body:await service.showReplyBrowser()};
   if(path==='/api/workflow/reply-browser/close')return {body:await service.closeReplyBrowser()};
   if(path==='/api/workflow/collection/start')return {status:202,body:await service.startCollection(body)};
   if(path==='/api/workflow/collection/cancel')return {body:await service.cancelCollection()};

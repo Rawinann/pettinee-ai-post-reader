@@ -18,7 +18,7 @@ function fixture({receipt=true,pending=false}={}){
  const page={isClosed:()=>closed,setDefaultTimeout(){},goto:async target=>{document.location.href=target;},evaluate:async(fn,args)=>fn(args,document),getByRole:()=>composer,waitForTimeout:async ms=>{now+=ms;}};
  const context={on(){},newPage:async()=>page,close:async()=>{closed=true;}};
  const publisher=createBrowserCommentPublisher({groupId,profileDir:'tmp/reply-browser-fixture',verifyTimeoutMs:800,contextFactory:async()=>{closed=false;return context;},clock:()=>now});
- return {document,editor,publisher,addReceipt,clicks:()=>clicks};
+ return {document,editor,publisher,page,context,addReceipt,clicks:()=>clicks};
 }
 test('DOM preflight rejects login, wrong target, changed source, multiple composers and reports existing draft',()=>{
  const f=fixture(),args={groupId,postId,sourceText:post.text};assert.equal(inspectReplyPage(args,f.document).state,'ready');
@@ -63,3 +63,20 @@ test('worker status does not claim the source is connected on a different group 
  const f=fixture();f.document.location.href='https://www.facebook.com/groups/999/';assert.equal(replyBrowserState({groupId},f.document).state,'wrong_page');f.document.location.href=url;const hidden=f.document.createElement('input');hidden.type='password';hidden.hidden=true;f.document.body.append(hidden);assert.equal(replyBrowserState({groupId},f.document).state,'open');hidden.hidden=false;assert.equal(replyBrowserState({groupId},f.document).state,'needs_login');
 });
 test('collection reuses the worker and excludes sending or closing until it finishes',async t=>{const f=fixture();t.after(()=>f.publisher.close());let release;const gate=new Promise(r=>release=r);const collecting=f.publisher.withCollection(async()=>gate);await Promise.resolve();assert.equal(f.publisher.status().busy,true);await assert.rejects(f.publisher.prepare(post),e=>e.definitive===true);await assert.rejects(f.publisher.disconnect(),e=>e.definitive===true);release();await collecting;assert.equal(f.publisher.status().busy,false);assert.equal(f.publisher.status().browserOpen,true);assert.equal(f.clicks(),0);});
+
+test('a hung Chrome launch times out, releases busy and permits retry; a late context cannot replace the working window',async t=>{
+ const f=fixture();let release,attempts=0,lateClosed=0;const publisher=createBrowserCommentPublisher({groupId,profileDir:'tmp/reply-start-timeout',startupTimeoutMs:15,contextFactory:()=>++attempts===1?new Promise(r=>release=r):f.context});t.after(()=>publisher.close());const first=publisher.open();await new Promise(r=>setTimeout(r,2));assert.equal(publisher.status().busy,true);assert.equal((await publisher.refreshStatus()).state,'opening');await assert.rejects(first,/เกินเวลา/);assert.equal(publisher.status().busy,false);assert.equal((await publisher.refreshStatus()).state,'error');await publisher.open();release({close:async()=>lateClosed++});await new Promise(r=>setTimeout(r,0));assert.equal(lateClosed,1);assert.equal(publisher.status().browserOpen,true);assert.equal(publisher.status().busy,false);assert.equal(f.clicks(),0);
+});
+
+test('a hung new tab or navigation cannot hold the browser lock indefinitely',async t=>{
+ const hung=createBrowserCommentPublisher({groupId,profileDir:'tmp/reply-tab-timeout',pageTimeoutMs:10,contextFactory:async()=>({on(){},newPage:()=>new Promise(()=>{}),close:async()=>{}})});t.after(()=>hung.close());await assert.rejects(hung.open(),/เกินเวลา/);assert.equal(hung.status().busy,false);
+ const f=fixture();f.page.goto=()=>new Promise(()=>{});const nav=createBrowserCommentPublisher({groupId,profileDir:'tmp/reply-nav-timeout',navigationTimeoutMs:10,contextFactory:async()=>f.context});t.after(()=>nav.close());await assert.rejects(nav.open(),/เกินเวลา/);assert.equal(nav.status().busy,false);assert.equal(nav.status().browserOpen,true);
+});
+
+test('showing the worker while busy only focuses it and never navigates, types or submits',async t=>{
+ const f=fixture();t.after(()=>f.publisher.close());let focuses=0,navigations=0,release;f.page.bringToFront=async()=>{focuses++;};const goto=f.page.goto;f.page.goto=async target=>{navigations++;return goto(target);};await f.publisher.open();const collecting=f.publisher.withCollection(async()=>new Promise(r=>release=r));while(!release)await new Promise(r=>setTimeout(r,0));const before=navigations;await f.publisher.show();assert.ok(focuses>=3);assert.equal(navigations,before);assert.equal(f.editor.textContent,'');assert.equal(f.clicks(),0);release();await collecting;assert.equal(f.publisher.status().browserOpen,true);
+});
+
+test('visible send stages retain the window and expose a receipt only after a matching comment is found',async t=>{
+ const f=fixture();t.after(()=>f.publisher.close());let focuses=0;f.page.bringToFront=async()=>{focuses++;};await f.publisher.open();assert.equal(f.publisher.status().lastReceipt,null);const target=await f.publisher.prepare(post);assert.equal(f.publisher.status().lastReceipt,null);await f.publisher.send(post,target);assert.equal(f.publisher.status().phase,'sent');assert.equal(f.publisher.status().browserOpen,true);assert.equal(f.publisher.status().lastReceipt.id,'900');assert.equal(f.publisher.status().lastReceipt.account,'Test Admin');assert.ok(focuses>=5);assert.equal(f.clicks(),1);
+});

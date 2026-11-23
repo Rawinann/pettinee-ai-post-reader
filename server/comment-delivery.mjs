@@ -17,6 +17,7 @@ export function createCommentDelivery({store,checkedPost,publisher=null,clock=Da
   status,
   async refreshStatus(){await publisher?.refreshStatus?.();return status();},
   async openBrowser(){if(closed||!publisher?.enabled||!publisher.open)throw workflowError('ยังไม่เปิดตัวส่งผ่าน Chrome ใช้ npm.cmd run replies:live',503);await publisher.open();return status();},
+  async showBrowser(){if(closed||!publisher?.enabled||!publisher.show)throw workflowError('ยังไม่มีหน้าต่าง Chrome ที่แสดงได้ เปิด worker ก่อน',503);await publisher.show();return status();},
   async closeBrowser(){if(pending.size||publisher?.status().busy)throw workflowError('กำลังตรวจหรือส่งคอมเมนต์ รอผลก่อนปิด Chrome',409);await publisher?.disconnect?.();tickets.clear();return status();},
   availability(post){let liveReason='';if(!publisher?.enabled)liveReason='ยังไม่เปิดตัวส่งจริงผ่าน Chrome';else{try{groupCommentTarget(post,publisher.groupId);}catch(e){liveReason=e.message;}}return {demo:true,live:!liveReason,liveReason};},
   async preview(id,{revision,mode='demo'}){
