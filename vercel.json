@@ -1,6 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
+  "installCommand": "npm ci --ignore-scripts --omit=dev",
   "buildCommand": "npm run build:cloud",
   "outputDirectory": "cloud-dist",
   "functions": {"api/index.mjs": {"maxDuration": 30,"includeFiles": "data/guides/catalog.json","excludeFiles": "{data/runtime/**,data/*.xlsx,models/**,tests/**,sites/**,automation/**,ml/**}"}},

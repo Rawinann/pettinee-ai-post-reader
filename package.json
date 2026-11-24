@@ -33,16 +33,16 @@
     "cloud:test-postgres": "node --env-file-if-exists=.env.cloud --test tests/cloud-postgres.integration.mjs"
   },
   "engines": {
-    "node": ">=22.13"
+    "node": ">=22.13 <25"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.17",
-    "linkedom": "0.18.12"
+    "@huggingface/transformers": "3.8.1",
+    "linkedom": "0.18.12",
+    "playwright-core": "1.65.1"
   },
   "dependencies": {
-    "@huggingface/transformers": "3.8.1",
-    "pg": "^8.23.1",
-    "playwright-core": "1.65.1"
+    "pg": "^8.23.1"
   },
   "overrides": {
     "@huggingface/transformers": {
