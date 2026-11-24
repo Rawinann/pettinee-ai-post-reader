@@ -39,3 +39,31 @@ Remove-Item Env:DATABASE_URL
 ดับเบิลคลิก [start-pettinee-worker.cmd](../start-pettinee-worker.cmd) แล้วเปิดหน้าต่างคำสั่งค้างไว้ รีเฟรช Dashboard จะเห็นเครื่อง `owner` เป็น **ออนไลน์** หลังจากนั้นจึงกดดึงโพสต์หรือกดส่งคำตอบได้ ปิดหน้าต่างนี้เมื่อหยุดงาน
 
 หาก Facebook ให้ล็อกอินใหม่ ให้ดับเบิลคลิก `login-pettinee-worker.cmd` อีกครั้ง การแก้ค่า worker บนเครื่องไม่ต้อง Redeploy Vercel
+
+## เพิ่ม worker ของเพจ Pettinee บนเครื่องเดียวกัน
+
+ช่องคอมเมนต์ที่แสดง “ตอบในชื่อ Pettinee” บอกว่าเลือกตัวตนเพจในหน้าจอนั้นได้ แต่ยังไม่ยืนยันว่ากดส่งสำเร็จ ให้ทดสอบการส่งจริงเฉพาะเมื่อทีมอนุมัติข้อความแล้ว
+
+ลงทะเบียน worker ตัวที่สองครั้งเดียว โดยคัดลอก Neon Connection string แบบ pooled ชุดปัจจุบัน แล้วพิมพ์ `$env:DATABASE_URL=Get-Clipboard` ด้วยมือใน PowerShell เหมือนหัวข้อแรก จากนั้นรัน:
+
+```powershell
+cd C:\intern\pettinee\post_demo
+$env:PUBLIC_ORIGIN='https://pettinee-ai-post-reader.vercel.app'
+$env:CLOUD_WORKER_ID='page'
+$env:CLOUD_WORKER_LABEL='เพจ Pettinee'
+$env:CLOUD_FACEBOOK_ACCOUNT=Read-Host 'ชื่อเพจเต็มที่ช่องคอมเมนต์ Facebook แสดง'
+npm.cmd run cloud:worker-register
+```
+
+เมื่อขึ้นว่า `บันทึก worker แล้ว` ให้รัน:
+
+```powershell
+Copy-Item data/runtime/cloud-page.env .env.worker.page
+Remove-Item Env:DATABASE_URL
+```
+
+ไฟล์ `.env.worker.page` มี token ของเพจแยกจาก `.env.worker` เก็บไว้ในเครื่อง ไม่ส่งในแชตหรือขึ้น Git
+
+ดับเบิลคลิก [login-pettinee-page-worker.cmd](../login-pettinee-page-worker.cmd) จะเปิด Chrome โปรไฟล์ใหม่ของ worker `page` ล็อกอินด้วยบัญชีส่วนตัวที่มีสิทธิ์จัดการเพจ แล้วเลือกตัวตนเพจในกลุ่ม ตรวจชื่อเพจที่ช่องคอมเมนต์ให้ตรงกับค่าที่ตั้งไว้ จากนั้นกด `Ctrl+C` ที่หน้าต่างคำสั่ง
+
+เวลาใช้งาน ดับเบิลคลิก [start-pettinee-page-worker.cmd](../start-pettinee-page-worker.cmd) ค้างไว้พร้อมกับ worker ส่วนตัวได้ ทั้งสองใช้ Chrome โปรไฟล์และ token คนละชุด ใน Dashboard ให้เลือก `เพจ Pettinee` ก่อนกดส่ง คำตอบจะไม่สลับบัญชีเอง และจะหยุดหากชื่อบัญชีในช่องคอมเมนต์ไม่ตรงกับ worker ที่เลือก
