@@ -20,6 +20,7 @@ echo Connecting the personal worker to Pettinee Dashboard...
 echo Keep this window open while collecting posts or sending replies.
 echo Close this window to stop the worker.
 echo.
+set "CLOUD_WORKER_SHOW_CHROME=true"
 npm.cmd run cloud:worker
 set "PETTINEE_WORKER_EXIT=%errorlevel%"
 echo.

@@ -20,6 +20,7 @@ echo Connecting the Page worker to Pettinee Dashboard...
 echo Keep this window open while sending replies as the Page.
 echo Close this window to stop the Page worker.
 echo.
+set "CLOUD_WORKER_SHOW_CHROME=true"
 node --env-file=.env.worker.page cloud/worker.mjs
 
 set "PETTINEE_WORKER_EXIT=%errorlevel%"

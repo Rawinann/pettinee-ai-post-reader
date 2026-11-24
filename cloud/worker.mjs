@@ -58,6 +58,10 @@ async function main(){
   collect:async scope=>{await collector.start({scope});while((await collector.status()).running)await delay(1000);const result=await collector.status();if(!result.last||result.last.state!=='completed')throw Object.assign(Error(result.message||'ยังเก็บโพสต์ไม่ครบตามรอบ'),{definitive:true});return result.last;},
  });
  let stopped=false;const stop=()=>{stopped=true;collector.cancel().catch(()=>{});};process.once('SIGINT',stop);process.once('SIGTERM',stop);
+ if(env.CLOUD_WORKER_SHOW_CHROME==='true'){
+  try{await publisher.open();console.log('Chrome ของ worker เปิดแล้ว ตรวจบัญชี Facebook ในหน้าต่างนี้ได้');}
+  catch(error){console.warn('Chrome ยังไม่พร้อม: '+(error.statusCode?error.message:'ลองตรวจ Chrome ในเครื่องแล้วเปิด worker ใหม่'));}
+ }
  try{do{try{await worker.tick();}catch(error){console.error(error.statusCode===409?'ผลค้างต้องตรวจสอบบน Dashboard ก่อนรับงานต่อ':'Cloud/worker ยังไม่พร้อม ตรวจ config หรือการเชื่อมต่อ');if([401,403,409].includes(error.statusCode))break;}if(process.argv.includes('--once'))break;if(!stopped)await delay(pollSeconds*1000);}while(!stopped);}finally{await collector.close();await publisher.close();}
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).href)main().catch(()=>{console.error('เปิด Cloud worker ไม่สำเร็จ ตรวจค่าตั้งต้นและคู่มือ');process.exitCode=1;});
