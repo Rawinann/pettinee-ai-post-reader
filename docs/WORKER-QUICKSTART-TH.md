@@ -67,3 +67,5 @@ Remove-Item Env:DATABASE_URL
 ดับเบิลคลิก [login-pettinee-page-worker.cmd](../login-pettinee-page-worker.cmd) จะเปิด Chrome โปรไฟล์ใหม่ของ worker `page` ล็อกอินด้วยบัญชีส่วนตัวที่มีสิทธิ์จัดการเพจ แล้วเลือกตัวตนเพจในกลุ่ม ตรวจชื่อเพจที่ช่องคอมเมนต์ให้ตรงกับค่าที่ตั้งไว้ จากนั้นกด `Ctrl+C` ที่หน้าต่างคำสั่ง
 
 เวลาใช้งาน ดับเบิลคลิก [start-pettinee-page-worker.cmd](../start-pettinee-page-worker.cmd) ค้างไว้พร้อมกับ worker ส่วนตัวได้ ทั้งสองใช้ Chrome โปรไฟล์และ token คนละชุด ใน Dashboard ให้เลือก `เพจ Pettinee` ก่อนกดส่ง คำตอบจะไม่สลับบัญชีเอง และจะหยุดหากชื่อบัญชีในช่องคอมเมนต์ไม่ตรงกับ worker ที่เลือก
+
+หากดับเบิลคลิกไม่เปิด ให้เปิด PowerShell ในโฟลเดอร์โปรเจกต์แล้วรัน `\.\login-pettinee-page-worker.cmd` หรือ `\.\start-pettinee-page-worker.cmd` ตามงานที่ต้องการ ไฟล์ `.cmd` ใช้ข้อความ ASCII และรูปแบบบรรทัด Windows เพื่อให้ CMD อ่านได้ถูกต้อง

@@ -1,33 +1,32 @@
 @echo off
-chcp 65001 >nul
 cd /d "%~dp0"
 title Pettinee Chrome Worker
 
 if not exist ".env.worker" (
-  echo ยังไม่ได้ตั้งค่า Chrome worker บนเครื่องนี้
-  echo เปิด docs\WORKER-QUICKSTART-TH.md เพื่อทำครั้งแรก
+  echo Worker setup is missing: .env.worker
+  echo See docs\WORKER-QUICKSTART-TH.md
   pause
   exit /b 1
 )
 
 where node >nul 2>&1
 if errorlevel 1 (
-  echo ไม่พบ Node.js บนเครื่องนี้
+  echo Node.js is not installed or not on PATH.
   pause
   exit /b 1
 )
 
-echo กำลังเชื่อม Chrome worker กับ Pettinee Dashboard...
-echo เปิดหน้าต่างนี้ไว้ระหว่างดึงโพสต์หรือส่งคำตอบ
-echo ปิดหน้าต่างนี้เพื่อหยุด worker
+echo Connecting the personal worker to Pettinee Dashboard...
+echo Keep this window open while collecting posts or sending replies.
+echo Close this window to stop the worker.
 echo.
 npm.cmd run cloud:worker
 set "PETTINEE_WORKER_EXIT=%errorlevel%"
 echo.
 if not "%PETTINEE_WORKER_EXIT%"=="0" (
-  echo Worker หยุดพร้อมข้อผิดพลาด ตรวจข้อความด้านบน
+  echo Worker stopped with an error. Read the message above.
 ) else (
-  echo Worker หยุดแล้ว
+  echo Worker stopped.
 )
 pause
 exit /b %PETTINEE_WORKER_EXIT%
