@@ -9,6 +9,7 @@ import {createDashboardCollector} from '../server/dashboard-collector.mjs';
 import {createIntentService} from '../server/intent.mjs';
 import {createGuideService} from '../server/guides.mjs';
 import {createPetmommyWriter} from '../server/petmommy.mjs';
+import {readWorkerAccount} from './worker-account.mjs';
 import {classifyTopics,evaluateSafety,verifiedGuides,checkReply} from '../lib/workflow-policy.mjs';
 const normal=s=>String(s||'').normalize('NFC').replace(/\s+/gu,' ').trim();
 export function createCloudWorker({request,publisher,analyse,collect,workerId,expectedAccount,publishEnabled=true,journal=async()=>{},loadJournal=async()=>null}){
@@ -41,7 +42,7 @@ export function createCloudWorker({request,publisher,analyse,collect,workerId,ex
 }
 export function workerRequest({origin,token,fetcher=fetch}){const u=new URL(origin);if((u.protocol!=='https:'&&!(u.protocol==='http:'&&['127.0.0.1','localhost'].includes(u.hostname)))||u.username||u.password||u.pathname!=='/'||u.search||u.hash)throw Error('CLOUD_ORIGIN ต้องเป็น HTTPS origin ของ Dashboard');if(!token||token.length<32)throw Error('ตั้ง CLOUD_WORKER_TOKEN ก่อน');return async(path,data)=>{if(!/^\/api\/worker\//.test(path))throw Error('Worker เรียกได้เฉพาะ worker API');const r=await fetcher(u.origin+path,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify(data),signal:AbortSignal.timeout(25000),redirect:'error'});const value=await r.json();if(!r.ok)throw Object.assign(Error(value.error||'Cloud ติดต่อไม่ได้'),{statusCode:r.status});return value;};}
 async function main(){
- const env=process.env,root=fileURLToPath(new URL('../',import.meta.url)),workerId=env.CLOUD_WORKER_ID,expectedAccount=env.CLOUD_FACEBOOK_ACCOUNT;
+ const env=process.env,root=fileURLToPath(new URL('../',import.meta.url)),workerId=env.CLOUD_WORKER_ID,expectedAccount=readWorkerAccount(env);
  if(!/^[A-Za-z0-9_-]{1,50}$/.test(workerId||'')||!expectedAccount)throw Error('ตั้ง CLOUD_WORKER_ID และ CLOUD_FACEBOOK_ACCOUNT ก่อน');
  const config=collectorConfig(root,{...env,COLLECTOR_PROFILE_DIR:env.COLLECTOR_PROFILE_DIR||'data/runtime/cloud-'+workerId+'-profile',COLLECTOR_OUTBOX_PATH:env.COLLECTOR_OUTBOX_PATH||'data/runtime/cloud-'+workerId+'-collector.sqlite'});config.statusPath=resolve(root,'data/runtime/cloud-'+workerId+'-collector-status.json');config.batchReportDir=resolve(root,'data/runtime/cloud-'+workerId+'-batch-reports');
  const publisher=createBrowserCommentPublisher({profileDir:config.profileDir,groupId:config.groupId,channel:config.channel});

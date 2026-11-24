@@ -42,6 +42,14 @@ test('post dialog is inspected and an unnamed public composer cannot authorize s
  document.querySelector('[role="dialog"]').remove();
  assert.equal(inspectReplyPage(args,document).state,'waiting_page');
 });
+test('Page reply composer identifies the selected Page from the visible Thai label',()=>{
+ const f=fixture(),args={groupId,postId,sourceText:post.text};
+ f.editor.setAttribute('aria-label','ตอบในชื่อ Pettinee "เพททีนี่" ปรึกษาสัตวแพทย์ออนไลน์');
+ const result=inspectReplyPage(args,f.document);
+ assert.equal(result.state,'ready');
+ assert.equal(result.account,'Pettinee "เพททีนี่" ปรึกษาสัตวแพทย์ออนไลน์');
+ assert.equal(result.existingDraft,false);
+});
 test('selected profile must be explicit, unique and visible',()=>{
  const {document}=parseHTML('<html><body><div role="dialog"><h2>โปรไฟล์และเพจของคุณ</h2><button aria-label="Test Adminการแจ้งเตือน 4 รายการเลือกไว้ในขณะนี้">Test Admin</button></div></body></html>');
  assert.equal(selectedCommentAccount(undefined,document),'Test Admin');

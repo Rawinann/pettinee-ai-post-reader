@@ -21,9 +21,9 @@ export function inspectReplyPage({groupId,postId,sourceText},suppliedDocument){
  const sourcePrefix=normal(sourceText).slice(0,80);
  if(!sourcePrefix||!normal(scope.innerText??scope.textContent).includes(sourcePrefix))return {state:'source_changed'};
  const label=el=>normal(el.getAttribute('aria-label')||el.getAttribute('placeholder')||(el.getAttribute('aria-labelledby')||'').split(/\s+/).map(id=>doc.getElementById(id)?.textContent||'').join(' '));
- const editors=Array.from(scope.querySelectorAll('[role="textbox"][contenteditable="true"],textarea[aria-label]')).filter(el=>visible(el)&&(/^(แสดงความคิดเห็นในชื่อ|Comment as)\s+.+/iu.test(label(el))||/^(เขียนความคิดเห็นที่แสดงต่อสาธารณะ|Write a public comment|เขียนคำตอบ|Write a reply)/iu.test(label(el))));
+ const editors=Array.from(scope.querySelectorAll('[role="textbox"][contenteditable="true"],textarea[aria-label]')).filter(el=>visible(el)&&(/^(แสดงความคิดเห็นในชื่อ|ตอบในชื่อ|Comment as|Reply as)\s+.+/iu.test(label(el))||/^(เขียนความคิดเห็นที่แสดงต่อสาธารณะ|Write a public comment|เขียนคำตอบ|Write a reply)/iu.test(label(el))));
  if(editors.length!==1)return {state:'composer_unavailable',composerCount:editors.length};
- const editor=editors[0],editorLabel=label(editor),account=editorLabel.replace(/^(แสดงความคิดเห็นในชื่อ|Comment as)\s+/iu,'').trim();
+ const editor=editors[0],editorLabel=label(editor),account=editorLabel.replace(/^(แสดงความคิดเห็นในชื่อ|ตอบในชื่อ|Comment as|Reply as)\s+/iu,'').trim();
  if(account===editorLabel)return {state:'account_unavailable',editorLabel};
  return {state:'ready',account,editorLabel,existingDraft:normal(editor.value??editor.innerText??editor.textContent).length>0};
 }
