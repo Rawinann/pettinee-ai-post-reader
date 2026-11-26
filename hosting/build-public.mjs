@@ -15,7 +15,7 @@ if(previous&&JSON.parse(previous).project_id!==JSON.parse(identity).project_id)t
 await fs.writeFile(join(output,'.openai/hosting.json.tmp'),identity);await fs.rename(join(output,'.openai/hosting.json.tmp'),join(output,'.openai/hosting.json'));
 const write=async(path,text)=>{const p=join(dist,path);await fs.mkdir(resolve(p,'..'),{recursive:true});await fs.writeFile(p,text);};
 const copy=async(path,to=path)=>write(to,await fs.readFile(join(root,path)));
-for(const file of ['app.mjs','styles.css','workflow.css','lib/workflow-ui.mjs','lib/comment-ui.mjs','lib/collection-ui.mjs','lib/workflow-policy.mjs','config.js','lib/analysis.mjs','lib/care.mjs','lib/experience-ui.mjs','lib/import.mjs','lib/public-posts.mjs','lib/intent.mjs','lib/intent-ui.mjs','lib/guide-ui.mjs','lib/guide-match.mjs'])await copy(file);
+for(const file of ['app.mjs','styles.css','workflow.css','lib/workflow-ui.mjs','lib/automation-ui.mjs','lib/comment-ui.mjs','lib/collection-ui.mjs','lib/workflow-policy.mjs','config.js','lib/analysis.mjs','lib/care.mjs','lib/experience-ui.mjs','lib/import.mjs','lib/public-posts.mjs','lib/intent.mjs','lib/intent-ui.mjs','lib/guide-ui.mjs','lib/guide-match.mjs'])await copy(file);
 await copy('hosting/reconcile-posts.mjs','lib/reconcile-posts.mjs');
 let html=await fs.readFile(join(root,'Pettinee_Feed_AI_Demo.html'),'utf8');html=html.replace('src="/app.mjs"','src="/entry.mjs"').replace('Demo</span>','Demo ออนไลน์</span>');
 let app=await fs.readFile(join(dist,'app.mjs'),'utf8');app=app.replace('<button class="text-button" data-action="load-public">เปิดชุด 200 โพสต์</button>','<button class="primary" data-care-action="new-case">เขียนเรื่องของฉัน</button>');
